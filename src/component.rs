@@ -59,7 +59,7 @@ pub trait Component {
     /// Children this component owns, if any. Default: empty.
     /// Layout containers (VStack, Grid, Form) override this. Leaf widgets
     /// (TextField, Toggle) don't.
-    fn children_mut(&mut self) -> Vec<&mut dyn Component> {
+    fn children_mut<'a>(&'a mut self) -> Vec<&'a mut (dyn Component + 'a)> {
         Vec::new()
     }
 
