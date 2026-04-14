@@ -14,9 +14,9 @@ pub mod validation;
 pub mod widgets;
 
 // Re-exports (uncommented as types are implemented):
-// pub use action::Action;
-// pub use component::{Component, RenderContext};
+pub use action::Action;
+pub use component::{Component, RenderContext};
 pub use event::Event;
 // pub use focus::FocusManager;
-// pub use theme::Theme;
-// pub use validation::ValidationResult;
+pub use theme::Theme;
+pub use validation::ValidationResult;
