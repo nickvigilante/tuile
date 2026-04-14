@@ -1,0 +1,19 @@
+[package]
+name = "tuile"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+description = "A reusable TUI component framework built on ratatui"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/nickv/tuile"
+readme = "README.md"
+keywords = ["tui", "ratatui", "terminal", "widgets", "components"]
+categories = ["command-line-interface"]
+
+[dependencies]
+ratatui = "0.29"
+crossterm = "0.29"
+chrono = "0.4"
+
+[dev-dependencies]
+# none yet
