@@ -85,9 +85,9 @@ Why `RefCell<Buffer>`: `Component::render` takes `&self`. The scratch buffer mut
 | Type | `measure` | `render_buf` |
 |---|---|---|
 | `Text` (new) | wrapped-line count at width W | `ratatui::widgets::Paragraph` |
-| `VStack` | Σ of children's `measure(width)` + spacing | iterate children vertically |
-| `HStack` | max of children's measures for its vertical slice | iterate children horizontally |
-| `Grid` | Σ of row heights (each row = max measure across cells) | iterate cells |
+| `VStack` | Σ of children's `measure(width)` + spacing (each child is given the full width) | iterate children vertically |
+| `HStack` | max of children's `measure(child_width)` (each child gets an equal slice of the width, matching v0.1 HStack layout) | iterate children horizontally |
+| `Grid` | Σ of row heights, where each row height = max of `cell.measure(column_width)` across cells in that row (each column gets an equal slice of the width) | iterate cells |
 | `Toggle` | 1 | underlying ratatui render into buffer |
 | `Radio` | 1 | underlying ratatui render into buffer |
 | `StatusBar` | 1 | underlying ratatui render into buffer |
@@ -115,7 +115,7 @@ pub trait Component {
 }
 ```
 
-Widgets that implement `ScrollContent` override to `Some(self)`. When a container (e.g., VStack) is asked to `render_buf`, it iterates children and calls `child.as_scroll_content()` on each; if `Some`, it delegates to that child's `render_buf`, if `None`, it leaves the child's row range blank (and emits a debug-log warning in debug builds).
+Widgets that implement `ScrollContent` override to `Some(self)`. When a container (e.g., VStack) is asked to `render_buf`, it iterates children and calls `child.as_scroll_content()` on each; if `Some`, it delegates to that child's `render_buf`; if `None`, it leaves the child's row range blank. (Logging behavior is not specified here; tuile has no logger integration in v0.2.)
 
 Net effect:
 
