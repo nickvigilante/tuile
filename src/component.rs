@@ -72,4 +72,51 @@ pub trait Component {
     fn name(&self) -> &'static str {
         "Component"
     }
+
+    /// If this component also implements `ScrollContent`, return `Some(self)`.
+    /// Default: `None`. Widgets that implement `ScrollContent` should
+    /// override this to `Some(self)` so container types can delegate to
+    /// them via `Box<dyn Component>` without a downcast.
+    fn as_scroll_content(&self) -> Option<&dyn crate::scroll_content::ScrollContent> {
+        None
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::scroll_content::ScrollContent;
+    use crate::action::Action;
+    use crate::event::Event;
+    use ratatui::buffer::Buffer;
+
+    struct Plain;
+    impl Component for Plain {
+        fn handle_event(&mut self, _: &Event, _: &mut Context) -> Action { Action::Ignored }
+        fn render(&self, _: &mut ratatui::Frame, _: Rect, _: &RenderContext) {}
+    }
+
+    struct Scrollable;
+    impl Component for Scrollable {
+        fn handle_event(&mut self, _: &Event, _: &mut Context) -> Action { Action::Ignored }
+        fn render(&self, _: &mut ratatui::Frame, _: Rect, _: &RenderContext) {}
+        fn as_scroll_content(&self) -> Option<&dyn ScrollContent> { Some(self) }
+    }
+    impl ScrollContent for Scrollable {
+        fn measure(&self, _: u16) -> u16 { 7 }
+        fn render_buf(&self, _: &mut Buffer, _: Rect, _: &RenderContext) {}
+    }
+
+    #[test]
+    fn plain_component_has_no_scroll_content() {
+        let p = Plain;
+        assert!(p.as_scroll_content().is_none());
+    }
+
+    #[test]
+    fn scrollable_component_returns_self_as_scroll_content() {
+        let s = Scrollable;
+        let sc = s.as_scroll_content().expect("should be Some");
+        assert_eq!(sc.measure(0), 7);
+    }
 }

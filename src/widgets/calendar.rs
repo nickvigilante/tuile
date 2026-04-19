@@ -37,11 +37,11 @@ impl Component for Calendar {
                 Action::Changed
             }
             KeyCode::Up => {
-                self.selected = self.selected - Duration::days(7);
+                self.selected -= Duration::days(7);
                 Action::Changed
             }
             KeyCode::Down => {
-                self.selected = self.selected + Duration::days(7);
+                self.selected += Duration::days(7);
                 Action::Changed
             }
             KeyCode::PageUp => {

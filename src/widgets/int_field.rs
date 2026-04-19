@@ -61,7 +61,7 @@ impl Component for IntField {
                     KeyCode::Up => {
                         if let Some(n) = self.value_i64() {
                             let next = n.saturating_add(1);
-                            if self.max.map_or(true, |m| next <= m) {
+                            if self.max.is_none_or(|m| next <= m) {
                                 self.inner.set_value(next.to_string());
                                 self.inner.start_editing();
                                 return Action::Changed;
@@ -72,7 +72,7 @@ impl Component for IntField {
                     KeyCode::Down => {
                         if let Some(n) = self.value_i64() {
                             let next = n.saturating_sub(1);
-                            if self.min.map_or(true, |m| next >= m) {
+                            if self.min.is_none_or(|m| next >= m) {
                                 self.inner.set_value(next.to_string());
                                 self.inner.start_editing();
                                 return Action::Changed;

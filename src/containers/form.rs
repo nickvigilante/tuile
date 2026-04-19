@@ -16,6 +16,7 @@ pub struct Form {
 
 impl Form {
     pub fn new() -> Self { Self { fields: Vec::new(), focus_idx: 0, field_editing: false } }
+    #[allow(clippy::should_implement_trait)] // deliberate builder-API choice; not std::ops::Add
     pub fn add(mut self, field: Box<dyn Component>) -> Self { self.fields.push(field); self }
     pub fn push(&mut self, field: Box<dyn Component>) { self.fields.push(field); }
     pub fn focused_field_mut<'a>(&'a mut self) -> Option<&'a mut (dyn Component + 'a)> {

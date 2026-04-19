@@ -2,6 +2,7 @@
 //! - `surface` ≈ `background`
 //! - `on_surface` ≈ `color`
 //! - `primary` ≈ `--accent`
+//!
 //! Widgets should use tokens, not hard-coded colors.
 
 use ratatui::style::{Color, Modifier, Style};

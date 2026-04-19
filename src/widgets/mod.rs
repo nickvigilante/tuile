@@ -11,3 +11,4 @@ pub mod calendar;
 pub mod status_bar;
 pub mod list;
 pub mod table;
+pub mod text;

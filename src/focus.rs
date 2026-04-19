@@ -98,7 +98,7 @@ impl FocusManager {
         let s = self.scope_mut();
         if s.focusables.is_empty() { return; }
         s.current = Some(match s.current {
-            Some(i) if i == 0 => s.focusables.len() - 1,
+            Some(0) => s.focusables.len() - 1,
             Some(i) => i - 1,
             None => 0,
         });
