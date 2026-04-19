@@ -144,13 +144,8 @@ impl Component for Dropdown {
         if self.open {
             let filtered = self.filtered();
             let max_visible = 8usize;
-            let h = (filtered.len().min(max_visible) + 3) as u16;
-            let overlay = Rect {
-                x: area.x,
-                y: area.y.saturating_add(1),
-                width: area.width.max(30),
-                height: h.min(frame.area().height.saturating_sub(area.y + 1)),
-            };
+            let desired_h = (filtered.len().min(max_visible) + 3) as u16;
+            let overlay = overlay_rect(area, frame.area(), desired_h);
             frame.render_widget(Clear, overlay);
             let mut lines = vec![
                 Line::styled(
@@ -191,7 +186,6 @@ impl Component for Dropdown {
     fn name(&self) -> &'static str { "Dropdown" }
 }
 
-#[allow(dead_code)]
 fn overlay_rect(anchor: Rect, screen: Rect, desired_h: u16) -> Rect {
     let width = anchor.width.max(30);
     let room_below = screen
