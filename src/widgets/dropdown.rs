@@ -191,6 +191,24 @@ impl Component for Dropdown {
     fn name(&self) -> &'static str { "Dropdown" }
 }
 
+#[allow(dead_code)]
+fn overlay_rect(anchor: Rect, screen: Rect, desired_h: u16) -> Rect {
+    let width = anchor.width.max(30);
+    let room_below = screen
+        .height
+        .saturating_sub(anchor.y.saturating_sub(screen.y) + 1);
+    let room_above = anchor.y.saturating_sub(screen.y);
+
+    if desired_h <= room_below {
+        Rect { x: anchor.x, y: anchor.y + 1, width, height: desired_h }
+    } else if room_above > room_below {
+        let h = desired_h.min(room_above);
+        Rect { x: anchor.x, y: anchor.y.saturating_sub(h), width, height: h }
+    } else {
+        Rect { x: anchor.x, y: anchor.y + 1, width, height: room_below }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -247,5 +265,51 @@ mod tests {
         }
         d.handle_event(&key(KeyCode::Enter), &mut c);
         assert_eq!(d.selected_value(), Some("Kiwi"));
+    }
+
+    fn screen(w: u16, h: u16) -> Rect { Rect::new(0, 0, w, h) }
+    fn anchor_at(y: u16, w: u16) -> Rect { Rect::new(0, y, w.max(30), 1) }
+
+    #[test]
+    fn overlay_rect_opens_below_when_fits() {
+        // Anchor near top of a 40-row screen, desired 11. Room below = 40 - (5+1) = 34. Fits.
+        let r = overlay_rect(anchor_at(5, 30), screen(80, 40), 11);
+        assert_eq!(r.y, 6);
+        assert_eq!(r.height, 11);
+        assert_eq!(r.x, 0);
+        assert_eq!(r.width, 30);
+    }
+
+    #[test]
+    fn overlay_rect_flips_above_when_below_insufficient_and_above_has_more_room() {
+        // Anchor at y=35 in 40-row screen. Room below = 40-36 = 4. Room above = 35. Flip.
+        let r = overlay_rect(anchor_at(35, 30), screen(80, 40), 11);
+        assert_eq!(r.y, 35 - 11);
+        assert_eq!(r.height, 11);
+    }
+
+    #[test]
+    fn overlay_rect_clamps_above_when_room_above_smaller_than_desired() {
+        // Anchor at y=8 in 10-row screen, desired 30. Room below = 10-9 = 1. Room above = 8.
+        // Above wins (8 > 1), clamp height to 8.
+        let r = overlay_rect(anchor_at(8, 30), screen(80, 10), 30);
+        assert_eq!(r.y, 0);
+        assert_eq!(r.height, 8);
+    }
+
+    #[test]
+    fn overlay_rect_stays_below_at_top_edge_when_no_room_above() {
+        // Anchor at y=0 in 10-row screen, desired 11. Room below = 10-1 = 9. Room above = 0.
+        // Below is chosen (9 >= 0), clamp to 9.
+        let r = overlay_rect(anchor_at(0, 30), screen(80, 10), 11);
+        assert_eq!(r.y, 1);
+        assert_eq!(r.height, 9);
+    }
+
+    #[test]
+    fn overlay_rect_width_respects_minimum_30() {
+        // Narrow anchor (width 10) still yields >= 30-wide overlay.
+        let r = overlay_rect(Rect::new(0, 5, 10, 1), screen(80, 40), 11);
+        assert_eq!(r.width, 30);
     }
 }
