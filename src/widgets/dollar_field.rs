@@ -53,7 +53,7 @@ fn milliunits_to_display(m: i64) -> String {
 }
 
 pub fn parse_dollar_to_milliunits(input: &str) -> Option<i64> {
-    let s = input.trim().replace(',', "").replace('$', "");
+    let s = input.trim().replace([',', '$'], "");
     if s.is_empty() { return None; }
     if let Some(dot) = s.find('.') {
         if s.len() - dot - 1 > 2 { return None; }

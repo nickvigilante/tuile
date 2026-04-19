@@ -1,6 +1,6 @@
 # tuile specification
 
-> Status: v0.1 — API unstable. This document describes the current shape of the crate and the design rationale behind it.
+> Status: v0.2 — API unstable. This document describes the current shape of the crate and the design rationale behind it.
 
 ## What tuile is
 
@@ -29,6 +29,7 @@ tuile/
 │   ├── component.rs      Component trait, RenderContext, Context
 │   ├── event.rs          Event enum (keyboard / paste / mouse / resize / tick)
 │   ├── focus.rs          FocusManager with scopes
+│   ├── scroll_content.rs  ScrollContent trait
 │   ├── theme/
 │   │   ├── mod.rs        Theme presets (dark, light)
 │   │   ├── tokens.rs     Theme struct with semantic tokens
@@ -45,6 +46,7 @@ tuile/
 │   │   ├── date_field.rs
 │   │   ├── calendar.rs
 │   │   ├── status_bar.rs
+│   │   ├── text.rs
 │   │   ├── list.rs
 │   │   └── table.rs
 │   └── containers/
@@ -223,6 +225,19 @@ impl FocusManager {
 
 **Mouse focus:** `focus_at(col, row)` scans the active scope's rects and moves focus to whichever contains the point.
 
+### `ScrollContent` (src/scroll_content.rs)
+
+```rust
+pub trait ScrollContent: Component {
+    fn measure(&self, width: u16) -> u16;
+    fn render_buf(&self, buf: &mut Buffer, area: Rect, ctx: &RenderContext);
+}
+```
+
+Implemented by widgets that are safe to render into an off-screen buffer (no cursor, no open overlays). Required by `ScrollView` for its direct child. The `Component` trait has a default `as_scroll_content(&self) -> Option<&dyn ScrollContent>` that returns `None`; widgets implementing `ScrollContent` override it to `Some(self)` so containers can delegate through `Box<dyn Component>` without a downcast.
+
+v0.2 ships `ScrollContent` for: `Text`, `VStack`, `HStack`, `Grid`, `Toggle`, `Radio`, `StatusBar`. Editable widgets (`TextField`, `IntField`, `FloatField`, `DollarField`, `DateField`, `Calendar`) and overlay widgets (`Dropdown`) intentionally do not implement it.
+
 ## Widget catalog
 
 All field widgets (TextField, IntField, FloatField, DollarField, DateField) follow an **Enter-to-edit** model:
@@ -312,6 +327,16 @@ bar.set("Saved");  // 45-tick countdown starts
 - One-line message that auto-dismisses on `Event::Tick`
 - Not focusable
 
+### Text
+```rust
+Text::new("Some read-only content that may wrap.")
+    .alignment(ratatui::layout::Alignment::Left)
+```
+- Read-only multi-line text. Wraps `ratatui::widgets::Paragraph`.
+- Implements `ScrollContent` — primary widget for scrollable text blocks.
+- `.no_wrap()` disables word-wrap; `.alignment(...)` sets alignment.
+- Rich styled runs are deferred to a future `RichText` widget.
+
 ### List
 ```rust
 let mut list = List::new(vec!["item 1".into(), "item 2".into()]);
@@ -374,8 +399,11 @@ modal.show();
 ```rust
 ScrollView::new(Box::new(long_content))
 ```
-- Wraps a child; handles Page/Home/End keys and mouse wheel
-- **v0.1 limitation:** does not yet do virtual-buffer clipping. Data widgets (List, Table) own their scroll; ScrollView is for arbitrary content that *hasn't* been made scrollable natively. Virtual buffer support is a v0.2 TODO.
+- Wraps a child that implements `ScrollContent`; clips oversized content to the viewport via an internal scratch buffer
+- Handles PgUp / PgDn / Home / End / mouse wheel
+- Direct children **must** implement `ScrollContent` (compile-time check). Editable widgets (TextField, IntField, DateField, Dropdown when open, Calendar) intentionally do not — wrapping one in `ScrollView` is a compile error.
+- Grandchildren (children of a VStack inside a ScrollView, etc.) are handled via `Component::as_scroll_content`; non-ScrollContent grandchildren have measured height 0 and their slot collapses. Documented limitation for v0.2; v0.3+ may lift this.
+- Horizontal scrolling is not supported in v0.2 (content reflows to viewport width via `measure`).
 
 ### Form
 ```rust
@@ -443,7 +471,7 @@ Each widget/container module includes `#[cfg(test)]` unit tests that exercise:
 
 Rendering is deliberately **not** unit-tested — it's verified manually via the host app. Rendering tests in TUI frameworks tend to be brittle (snapshot tests for character grids) and expensive to maintain. Behavior is what matters.
 
-Current coverage: 39 tests across Event, Theme (contrast + preset compliance), FocusManager, VStack, TextField, IntField, DollarField, Toggle, Dropdown, List.
+Current coverage: 78 tests across Event, Theme (contrast + preset compliance), FocusManager, ScrollContent, ScrollView, Text, VStack, HStack, Grid, TextField, IntField, FloatField, DollarField, DateField, Calendar, Toggle, Radio, Dropdown, StatusBar, List, Table.
 
 ## Design decisions worth knowing
 
@@ -467,24 +495,28 @@ Tick-based timing ties the dismissal cadence to the host app's render clock. Tha
 
 Overlay is a general container meant for absolutely-positioned children (context menus, tooltips). Dropdown's overlay is tightly coupled to the closed-state anchor rect, so doing it inline in Dropdown's `render` avoids the need to hoist the filter/cursor state into the Overlay-wrapping parent. When we add ContextMenu in v0.2, we'll use Overlay proper.
 
+### Why `ScrollContent` is a sub-trait, not a method on Component
+
+Making `ScrollView::new` take `Box<dyn ScrollContent>` (instead of `Box<dyn Component>`) gives us a compile-time check that the direct child is scroll-safe. Editable widgets (which can't render correctly into a buffer without cursor support) literally cannot compile inside a `ScrollView`. Adding the methods directly to `Component` with default `panic!()` or no-op implementations would push that check to runtime or produce silent rendering bugs.
+
+v0.3+ can add `fn cursor_hint(&self) -> Option<Position> { None }` to `ScrollContent` to make editable widgets work inside a ScrollView, without any breaking change to the v0.2 API.
+
 ## v0.2 roadmap
 
 - **ContextMenu widget** — right-click menus, built on Overlay.
-- **Virtual-buffer ScrollView** — render child into a larger off-screen buffer, blit the viewport.
 - **Subscriptions** — let non-focused components react to specific event patterns (analogous to tui-realm's Sub).
 - **Ports** — integrate user-defined async event sources (background polls, API tickers) into the event loop.
 - **Animations** — first-class spinner/fade/transition helpers.
 - **Theme hot-reload** — load themes from TOML, reload without restart.
 - **A11y hints** — structured labels for screen readers (where terminals support them).
 
-## Known v0.1 limitations
+## Known v0.2 limitations
 
-1. **ScrollView does not clip.** It routes scroll events; data widgets own their scroll. Arbitrary long content inside ScrollView won't clip.
-2. **No keyboard-driven focus wiring inside Form.** Form has internal focus tracking, but it isn't wired into `FocusManager`. Top-level focus management (Tab/Shift+Tab across whole screens) is up to the app.
-3. **Dropdown overlay positions below the anchor.** If the anchor is near the bottom of the screen, the overlay may get clipped. No flip-above-if-no-room logic yet.
-4. **Calendar doesn't highlight "today."** Only the selected date is highlighted. `chrono::Local::now()` could be compared and styled differently.
-5. **No password/masked text input.** TextField could gain a `.masked()` option.
-6. **Mouse click-to-focus needs app wiring.** `FocusManager::focus_at` exists; the app's run loop must call it when a mouse click arrives (tuile doesn't do this automatically because it doesn't own the run loop).
+1. **No keyboard-driven focus wiring inside Form.** Form has internal focus tracking, but it isn't wired into `FocusManager`. Top-level focus management (Tab/Shift+Tab across whole screens) is up to the app.
+2. **Dropdown overlay positions below the anchor.** If the anchor is near the bottom of the screen, the overlay may get clipped. No flip-above-if-no-room logic yet.
+3. **Calendar doesn't highlight "today."** Only the selected date is highlighted. `chrono::Local::now()` could be compared and styled differently.
+4. **No password/masked text input.** TextField could gain a `.masked()` option.
+5. **Mouse click-to-focus needs app wiring.** `FocusManager::focus_at` exists; the app's run loop must call it when a mouse click arrives (tuile doesn't do this automatically because it doesn't own the run loop).
 
 ## How the app at ../ynab-budget-manager uses tuile
 
@@ -503,7 +535,7 @@ This integration is what proved out the widget ergonomics — if you're iteratin
 ## Tests you can run right now
 
 ```
-cargo test           # 39 tests across widgets, theme contrast, focus, event conversion
+cargo test           # 78 tests across widgets, containers, scroll, theme contrast, focus, event conversion
 cargo build          # clean, no warnings
 ```
 

@@ -37,7 +37,7 @@ fn rgb_components(c: Color) -> Option<(u8, u8, u8)> {
 
 /// Check whether a foreground/background pair meets Section 508 (≥4.5:1).
 pub fn meets_aa(fg: Color, bg: Color) -> bool {
-    contrast_ratio(fg, bg).map_or(true, |r| r >= 4.5)
+    contrast_ratio(fg, bg).is_none_or(|r| r >= 4.5)
 }
 
 #[cfg(test)]

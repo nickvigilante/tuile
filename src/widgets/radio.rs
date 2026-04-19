@@ -3,11 +3,14 @@
 use crate::action::Action;
 use crate::component::{Component, Context, RenderContext};
 use crate::event::Event;
+use crate::scroll_content::ScrollContent;
+use crate::theme::Theme;
 use crossterm::event::KeyCode;
+use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
 use ratatui::style::{Modifier, Style};
 use ratatui::text::{Line, Span};
-use ratatui::widgets::Paragraph;
+use ratatui::widgets::{Paragraph, Widget};
 use ratatui::Frame;
 
 pub struct Radio {
@@ -35,26 +38,8 @@ impl Radio {
     pub fn revert(&mut self) { self.selected = self.committed; }
 }
 
-impl Component for Radio {
-    fn handle_event(&mut self, event: &Event, _ctx: &mut Context) -> Action {
-        let Event::Key(k) = event else { return Action::Ignored; };
-        match k.code {
-            KeyCode::Left => {
-                if self.selected > 0 { self.selected -= 1; }
-                Action::Changed
-            }
-            KeyCode::Right => {
-                if self.selected + 1 < self.options.len() { self.selected += 1; }
-                Action::Changed
-            }
-            KeyCode::Enter => { self.commit(); Action::Submit }
-            KeyCode::Esc => { self.revert(); Action::Cancel }
-            _ => Action::Absorbed,
-        }
-    }
-
-    fn render(&self, frame: &mut Frame, area: Rect, ctx: &RenderContext) {
-        let theme = ctx.theme;
+impl Radio {
+    fn build_paragraph<'a>(&'a self, theme: &Theme) -> Paragraph<'a> {
         let dirty = if self.is_dirty() {
             Span::styled(" •", Style::default().fg(theme.warning))
         } else { Span::raw("") };
@@ -74,8 +59,72 @@ impl Component for Radio {
             }
         }
         spans.push(dirty);
-        frame.render_widget(Paragraph::new(Line::from(spans)), area);
+        Paragraph::new(Line::from(spans))
+    }
+}
+
+impl Component for Radio {
+    fn handle_event(&mut self, event: &Event, _ctx: &mut Context) -> Action {
+        let Event::Key(k) = event else { return Action::Ignored; };
+        match k.code {
+            KeyCode::Left => {
+                if self.selected > 0 { self.selected -= 1; }
+                Action::Changed
+            }
+            KeyCode::Right => {
+                if self.selected + 1 < self.options.len() { self.selected += 1; }
+                Action::Changed
+            }
+            KeyCode::Enter => { self.commit(); Action::Submit }
+            KeyCode::Esc => { self.revert(); Action::Cancel }
+            _ => Action::Absorbed,
+        }
+    }
+
+    fn render(&self, frame: &mut Frame, area: Rect, ctx: &RenderContext) {
+        frame.render_widget(self.build_paragraph(ctx.theme), area);
     }
 
     fn name(&self) -> &'static str { "Radio" }
+
+    fn as_scroll_content(&self) -> Option<&dyn ScrollContent> { Some(self) }
+}
+
+impl ScrollContent for Radio {
+    fn measure(&self, _width: u16) -> u16 { 1 }
+    fn render_buf(&self, buf: &mut Buffer, area: Rect, ctx: &RenderContext) {
+        self.build_paragraph(ctx.theme).render(area, buf);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::scroll_content::ScrollContent;
+    use ratatui::buffer::Buffer;
+
+    #[test]
+    fn scroll_content_measure_is_one() {
+        let r = Radio::new("x", vec!["a".into(), "b".into()], 0);
+        assert_eq!(r.measure(20), 1);
+    }
+
+    #[test]
+    fn scroll_content_render_buf_writes_label_and_options() {
+        let r = Radio::new("x", vec!["a".into(), "b".into()], 0);
+        let theme = crate::theme::Theme::dark();
+        let rctx = RenderContext::new(&theme);
+        let area = Rect::new(0, 0, 30, 1);
+        let mut buf = Buffer::empty(area);
+        r.render_buf(&mut buf, area, &rctx);
+        let row: String = (0..area.width).map(|x| buf[(x, 0)].symbol().to_string()).collect();
+        assert!(row.contains("a"), "row was {:?}", row);
+        assert!(row.contains("b"), "row was {:?}", row);
+    }
+
+    #[test]
+    fn as_scroll_content_returns_self() {
+        let r = Radio::new("x", vec!["a".into()], 0);
+        assert!(r.as_scroll_content().is_some());
+    }
 }
