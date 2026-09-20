@@ -302,6 +302,7 @@ Dropdown::new("Category", options, Some(0))
 - Open state: filter line + selectable list of matches, rendered as an overlay below the anchor rect
 - Type to filter (case-insensitive substring match)
 - `allow_create()` lets Enter on a no-match filter add a new option
+- Overlay opens below the anchor by default; flips above automatically when below doesn't have enough room.
 
 ### DateField
 ```rust
@@ -513,10 +514,9 @@ v0.3+ can add `fn cursor_hint(&self) -> Option<Position> { None }` to `ScrollCon
 ## Known v0.2 limitations
 
 1. **No keyboard-driven focus wiring inside Form.** Form has internal focus tracking, but it isn't wired into `FocusManager`. Top-level focus management (Tab/Shift+Tab across whole screens) is up to the app.
-2. **Dropdown overlay positions below the anchor.** If the anchor is near the bottom of the screen, the overlay may get clipped. No flip-above-if-no-room logic yet.
-3. **Calendar doesn't highlight "today."** Only the selected date is highlighted. `chrono::Local::now()` could be compared and styled differently.
-4. **No password/masked text input.** TextField could gain a `.masked()` option.
-5. **Mouse click-to-focus needs app wiring.** `FocusManager::focus_at` exists; the app's run loop must call it when a mouse click arrives (tuile doesn't do this automatically because it doesn't own the run loop).
+2. **Calendar doesn't highlight "today."** Only the selected date is highlighted. `chrono::Local::now()` could be compared and styled differently.
+3. **No password/masked text input.** TextField could gain a `.masked()` option.
+4. **Mouse click-to-focus needs app wiring.** `FocusManager::focus_at` exists; the app's run loop must call it when a mouse click arrives (tuile doesn't do this automatically because it doesn't own the run loop).
 
 ## How the app at ../ynab-budget-manager uses tuile
 
