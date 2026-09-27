@@ -4,11 +4,11 @@ use crate::action::Action;
 use crate::component::{Component, Context, RenderContext};
 use crate::event::{Event, MouseKind};
 use crossterm::event::KeyCode;
+use ratatui::Frame;
 use ratatui::layout::Rect;
 use ratatui::style::{Modifier, Style};
 use ratatui::text::Line;
 use ratatui::widgets::Paragraph;
-use ratatui::Frame;
 
 pub struct List {
     items: Vec<String>,
@@ -17,13 +17,23 @@ pub struct List {
 }
 
 impl List {
-    pub fn new(items: Vec<String>) -> Self { Self { items, cursor: 0, scroll: 0 } }
+    pub fn new(items: Vec<String>) -> Self {
+        Self {
+            items,
+            cursor: 0,
+            scroll: 0,
+        }
+    }
     pub fn set_items(&mut self, items: Vec<String>) {
         self.items = items;
         self.cursor = self.cursor.min(self.items.len().saturating_sub(1));
     }
-    pub fn selected(&self) -> Option<&str> { self.items.get(self.cursor).map(|s| s.as_str()) }
-    pub fn selected_index(&self) -> usize { self.cursor }
+    pub fn selected(&self) -> Option<&str> {
+        self.items.get(self.cursor).map(|s| s.as_str())
+    }
+    pub fn selected_index(&self) -> usize {
+        self.cursor
+    }
 
     /// Adjust scroll offset so cursor is in view AND no empty space below content.
     /// Bottom-clamp runs first; cursor-into-view only scrolls forward (down) if
@@ -48,25 +58,41 @@ impl Component for List {
         match event {
             Event::Key(k) => match k.code {
                 KeyCode::Up => {
-                    if self.cursor > 0 { self.cursor -= 1; }
+                    if self.cursor > 0 {
+                        self.cursor -= 1;
+                    }
                     Action::Changed
                 }
                 KeyCode::Down => {
-                    if self.cursor + 1 < self.items.len() { self.cursor += 1; }
+                    if self.cursor + 1 < self.items.len() {
+                        self.cursor += 1;
+                    }
                     Action::Changed
                 }
-                KeyCode::Home => { self.cursor = 0; Action::Changed }
-                KeyCode::End => { self.cursor = self.items.len().saturating_sub(1); Action::Changed }
+                KeyCode::Home => {
+                    self.cursor = 0;
+                    Action::Changed
+                }
+                KeyCode::End => {
+                    self.cursor = self.items.len().saturating_sub(1);
+                    Action::Changed
+                }
                 KeyCode::PageDown => {
                     self.cursor = (self.cursor + 10).min(self.items.len().saturating_sub(1));
                     Action::Changed
                 }
-                KeyCode::PageUp => { self.cursor = self.cursor.saturating_sub(10); Action::Changed }
+                KeyCode::PageUp => {
+                    self.cursor = self.cursor.saturating_sub(10);
+                    Action::Changed
+                }
                 KeyCode::Enter => Action::Submit,
                 _ => Action::Ignored,
             },
             Event::Mouse(m) => match m.kind {
-                MouseKind::ScrollUp => { self.cursor = self.cursor.saturating_sub(3); Action::Changed }
+                MouseKind::ScrollUp => {
+                    self.cursor = self.cursor.saturating_sub(3);
+                    Action::Changed
+                }
                 MouseKind::ScrollDown => {
                     self.cursor = (self.cursor + 3).min(self.items.len().saturating_sub(1));
                     Action::Changed
@@ -80,8 +106,9 @@ impl Component for List {
     fn render(&self, frame: &mut Frame, area: Rect, ctx: &RenderContext) {
         // Compute local scroll (render can't mutate self).
         let mut scroll = self.scroll;
-        if (self.cursor as u16) < scroll { scroll = self.cursor as u16; }
-        else if (self.cursor as u16) >= scroll + area.height {
+        if (self.cursor as u16) < scroll {
+            scroll = self.cursor as u16;
+        } else if (self.cursor as u16) >= scroll + area.height {
             scroll = (self.cursor as u16 + 1).saturating_sub(area.height);
         }
         let len = self.items.len() as u16;
@@ -92,21 +119,30 @@ impl Component for List {
         let theme = ctx.theme;
         let start = scroll as usize;
         let end = (start + area.height as usize).min(self.items.len());
-        let lines: Vec<Line> = self.items[start..end].iter().enumerate().map(|(i, s)| {
-            let idx = start + i;
-            if idx == self.cursor {
-                Line::styled(
-                    format!("› {}", s),
-                    Style::default().fg(theme.on_primary).bg(theme.primary).add_modifier(Modifier::BOLD),
-                )
-            } else {
-                Line::styled(format!("  {}", s), Style::default().fg(theme.on_surface))
-            }
-        }).collect();
+        let lines: Vec<Line> = self.items[start..end]
+            .iter()
+            .enumerate()
+            .map(|(i, s)| {
+                let idx = start + i;
+                if idx == self.cursor {
+                    Line::styled(
+                        format!("› {}", s),
+                        Style::default()
+                            .fg(theme.on_primary)
+                            .bg(theme.primary)
+                            .add_modifier(Modifier::BOLD),
+                    )
+                } else {
+                    Line::styled(format!("  {}", s), Style::default().fg(theme.on_surface))
+                }
+            })
+            .collect();
         frame.render_widget(Paragraph::new(lines), area);
     }
 
-    fn name(&self) -> &'static str { "List" }
+    fn name(&self) -> &'static str {
+        "List"
+    }
 }
 
 #[cfg(test)]
@@ -120,12 +156,15 @@ mod tests {
         let mut l = List::new(vec!["a".into(), "b".into(), "c".into()]);
         let t = Theme::dark();
         let mut c = Context { theme: &t };
-        l.handle_event(&Event::Key(KeyEvent {
-            code: KeyCode::Down,
-            modifiers: KeyModifiers::NONE,
-            kind: KeyEventKind::Press,
-            state: KeyEventState::NONE,
-        }), &mut c);
+        l.handle_event(
+            &Event::Key(KeyEvent {
+                code: KeyCode::Down,
+                modifiers: KeyModifiers::NONE,
+                kind: KeyEventKind::Press,
+                state: KeyEventState::NONE,
+            }),
+            &mut c,
+        );
         assert_eq!(l.cursor, 1);
     }
 

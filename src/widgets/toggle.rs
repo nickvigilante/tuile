@@ -7,12 +7,12 @@ use crate::event::Event;
 use crate::scroll_content::ScrollContent;
 use crate::theme::Theme;
 use crossterm::event::KeyCode;
+use ratatui::Frame;
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
 use ratatui::style::{Modifier, Style};
 use ratatui::text::{Line, Span};
 use ratatui::widgets::{Paragraph, Widget};
-use ratatui::Frame;
 
 pub struct Toggle {
     value: bool,
@@ -22,20 +22,42 @@ pub struct Toggle {
 
 impl Toggle {
     pub fn new(label: impl Into<String>, value: bool) -> Self {
-        Self { value, committed: value, label: label.into() }
+        Self {
+            value,
+            committed: value,
+            label: label.into(),
+        }
     }
-    pub fn value(&self) -> bool { self.value }
-    pub fn set_value(&mut self, v: bool) { self.value = v; self.committed = v; }
-    pub fn is_dirty(&self) -> bool { self.value != self.committed }
-    pub fn commit(&mut self) { self.committed = self.value; }
-    pub fn revert(&mut self) { self.value = self.committed; }
+    pub fn value(&self) -> bool {
+        self.value
+    }
+    pub fn set_value(&mut self, v: bool) {
+        self.value = v;
+        self.committed = v;
+    }
+    pub fn is_dirty(&self) -> bool {
+        self.value != self.committed
+    }
+    pub fn commit(&mut self) {
+        self.committed = self.value;
+    }
+    pub fn revert(&mut self) {
+        self.value = self.committed;
+    }
 
     fn build_paragraph<'a>(&'a self, theme: &Theme) -> Paragraph<'a> {
         let dirty = if self.is_dirty() {
             Span::styled(" •", Style::default().fg(theme.warning))
-        } else { Span::raw("") };
+        } else {
+            Span::raw("")
+        };
         let (text, style) = if self.value {
-            ("  ◉ ON ", Style::default().fg(theme.success).add_modifier(Modifier::BOLD))
+            (
+                "  ◉ ON ",
+                Style::default()
+                    .fg(theme.success)
+                    .add_modifier(Modifier::BOLD),
+            )
         } else {
             (" ○ OFF ", Style::default().fg(theme.on_surface_dim))
         };
@@ -50,25 +72,39 @@ impl Toggle {
 
 impl Component for Toggle {
     fn handle_event(&mut self, event: &Event, _ctx: &mut Context) -> Action {
-        let Event::Key(k) = event else { return Action::Ignored; };
+        let Event::Key(k) = event else {
+            return Action::Ignored;
+        };
         match k.code {
-            KeyCode::Enter | KeyCode::Char(' ') => { self.value = !self.value; Action::Changed }
-            KeyCode::Esc => { self.revert(); Action::Cancel }
+            KeyCode::Enter | KeyCode::Char(' ') => {
+                self.value = !self.value;
+                Action::Changed
+            }
+            KeyCode::Esc => {
+                self.revert();
+                Action::Cancel
+            }
             _ => Action::Absorbed,
         }
     }
 
-    fn as_scroll_content(&self) -> Option<&dyn ScrollContent> { Some(self) }
+    fn as_scroll_content(&self) -> Option<&dyn ScrollContent> {
+        Some(self)
+    }
 
     fn render(&self, frame: &mut Frame, area: Rect, ctx: &RenderContext) {
         frame.render_widget(self.build_paragraph(ctx.theme), area);
     }
 
-    fn name(&self) -> &'static str { "Toggle" }
+    fn name(&self) -> &'static str {
+        "Toggle"
+    }
 }
 
 impl ScrollContent for Toggle {
-    fn measure(&self, _width: u16) -> u16 { 1 }
+    fn measure(&self, _width: u16) -> u16 {
+        1
+    }
     fn render_buf(&self, buf: &mut Buffer, area: Rect, ctx: &RenderContext) {
         self.build_paragraph(ctx.theme).render(area, buf);
     }
@@ -77,16 +113,18 @@ impl ScrollContent for Toggle {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::theme::Theme;
     use crate::scroll_content::ScrollContent;
+    use crate::theme::Theme;
     use crossterm::event::{KeyEvent, KeyEventKind, KeyEventState, KeyModifiers};
     use ratatui::buffer::Buffer;
     use ratatui::layout::Rect;
 
     fn key(c: KeyCode) -> Event {
         Event::Key(KeyEvent {
-            code: c, modifiers: KeyModifiers::NONE,
-            kind: KeyEventKind::Press, state: KeyEventState::NONE,
+            code: c,
+            modifiers: KeyModifiers::NONE,
+            kind: KeyEventKind::Press,
+            state: KeyEventState::NONE,
         })
     }
 
@@ -131,7 +169,9 @@ mod tests {
         let area = Rect::new(0, 0, 30, 1);
         let mut buf = Buffer::empty(area);
         t.render_buf(&mut buf, area, &rctx);
-        let row: String = (0..area.width).map(|x| buf[(x, 0)].symbol().to_string()).collect();
+        let row: String = (0..area.width)
+            .map(|x| buf[(x, 0)].symbol().to_string())
+            .collect();
         assert!(row.starts_with("x:"), "row was {:?}", row);
         assert!(row.contains("◉"), "row was {:?}", row);
         assert!(row.contains("ON"), "row was {:?}", row);

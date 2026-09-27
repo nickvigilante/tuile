@@ -4,12 +4,12 @@ use crate::action::Action;
 use crate::component::{Component, Context, RenderContext};
 use crate::event::Event;
 use crate::scroll_content::ScrollContent;
+use ratatui::Frame;
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
 use ratatui::style::Style;
 use ratatui::text::Line;
 use ratatui::widgets::{Paragraph, Widget};
-use ratatui::Frame;
 
 pub struct StatusBar {
     text: String,
@@ -18,39 +18,68 @@ pub struct StatusBar {
 }
 
 impl StatusBar {
-    pub fn new() -> Self { Self { text: String::new(), ticks: 0 } }
-    pub fn set(&mut self, text: impl Into<String>) { self.text = text.into(); self.ticks = 45; }
-    pub fn clear(&mut self) { self.text.clear(); self.ticks = 0; }
-    pub fn visible(&self) -> bool { self.ticks > 0 }
+    pub fn new() -> Self {
+        Self {
+            text: String::new(),
+            ticks: 0,
+        }
+    }
+    pub fn set(&mut self, text: impl Into<String>) {
+        self.text = text.into();
+        self.ticks = 45;
+    }
+    pub fn clear(&mut self) {
+        self.text.clear();
+        self.ticks = 0;
+    }
+    pub fn visible(&self) -> bool {
+        self.ticks > 0
+    }
 }
 
 impl Default for StatusBar {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl Component for StatusBar {
     fn handle_event(&mut self, event: &Event, _ctx: &mut Context) -> Action {
-        if matches!(event, Event::Tick) && self.ticks > 0 { self.ticks -= 1; }
+        if matches!(event, Event::Tick) && self.ticks > 0 {
+            self.ticks -= 1;
+        }
         Action::Ignored
     }
 
     fn render(&self, frame: &mut Frame, area: Rect, ctx: &RenderContext) {
-        if !self.visible() { return; }
+        if !self.visible() {
+            return;
+        }
         frame.render_widget(
             Paragraph::new(Line::raw(self.text.clone())).style(Style::default().fg(ctx.theme.info)),
             area,
         );
     }
 
-    fn is_focusable(&self) -> bool { false }
-    fn name(&self) -> &'static str { "StatusBar" }
-    fn as_scroll_content(&self) -> Option<&dyn ScrollContent> { Some(self) }
+    fn is_focusable(&self) -> bool {
+        false
+    }
+    fn name(&self) -> &'static str {
+        "StatusBar"
+    }
+    fn as_scroll_content(&self) -> Option<&dyn ScrollContent> {
+        Some(self)
+    }
 }
 
 impl ScrollContent for StatusBar {
-    fn measure(&self, _width: u16) -> u16 { 1 }
+    fn measure(&self, _width: u16) -> u16 {
+        1
+    }
     fn render_buf(&self, buf: &mut Buffer, area: Rect, ctx: &RenderContext) {
-        if !self.visible() { return; }
+        if !self.visible() {
+            return;
+        }
         Paragraph::new(Line::raw(self.text.clone()))
             .style(Style::default().fg(ctx.theme.info))
             .render(area, buf);
@@ -77,7 +106,9 @@ mod tests {
         let area = Rect::new(0, 0, 10, 1);
         let mut buf = Buffer::empty(area);
         b.render_buf(&mut buf, area, &rctx);
-        let row: String = (0..area.width).map(|x| buf[(x, 0)].symbol().to_string()).collect();
+        let row: String = (0..area.width)
+            .map(|x| buf[(x, 0)].symbol().to_string())
+            .collect();
         assert!(row.starts_with("hello"), "row was {:?}", row);
     }
 
@@ -89,7 +120,9 @@ mod tests {
         let area = Rect::new(0, 0, 10, 1);
         let mut buf = Buffer::empty(area);
         b.render_buf(&mut buf, area, &rctx);
-        let row: String = (0..area.width).map(|x| buf[(x, 0)].symbol().to_string()).collect();
+        let row: String = (0..area.width)
+            .map(|x| buf[(x, 0)].symbol().to_string())
+            .collect();
         assert_eq!(row.trim(), "");
     }
 

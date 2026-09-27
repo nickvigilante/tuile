@@ -4,9 +4,9 @@ use crate::action::Action;
 use crate::component::{Component, Context, RenderContext};
 use crate::event::Event;
 use crate::scroll_content::ScrollContent;
+use ratatui::Frame;
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
-use ratatui::Frame;
 
 pub struct VStack {
     children: Vec<Box<dyn Component>>,
@@ -14,17 +14,30 @@ pub struct VStack {
 }
 
 impl VStack {
-    pub fn new() -> Self { Self { children: Vec::new(), spacing: 0 } }
-    pub fn spacing(mut self, n: u16) -> Self { self.spacing = n; self }
+    pub fn new() -> Self {
+        Self {
+            children: Vec::new(),
+            spacing: 0,
+        }
+    }
+    pub fn spacing(mut self, n: u16) -> Self {
+        self.spacing = n;
+        self
+    }
     #[allow(clippy::should_implement_trait)] // deliberate builder-API choice; not std::ops::Add
     pub fn add(mut self, child: Box<dyn Component>) -> Self {
-        self.children.push(child); self
+        self.children.push(child);
+        self
     }
-    pub fn push(&mut self, child: Box<dyn Component>) { self.children.push(child); }
+    pub fn push(&mut self, child: Box<dyn Component>) {
+        self.children.push(child);
+    }
 }
 
 impl Default for VStack {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl Component for VStack {
@@ -40,7 +53,9 @@ impl Component for VStack {
 
     fn render(&self, frame: &mut Frame, area: Rect, ctx: &RenderContext) {
         let n = self.children.len() as u16;
-        if n == 0 || area.height == 0 { return; }
+        if n == 0 || area.height == 0 {
+            return;
+        }
 
         let total_spacing = self.spacing.saturating_mul(n.saturating_sub(1));
         let usable = area.height.saturating_sub(total_spacing);
@@ -51,8 +66,15 @@ impl Component for VStack {
         for (i, child) in self.children.iter().enumerate() {
             let extra = if (i as u16) < remainder { 1 } else { 0 };
             let h = per_child + extra;
-            if h == 0 { continue; }
-            let rect = Rect { x: area.x, y, width: area.width, height: h };
+            if h == 0 {
+                continue;
+            }
+            let rect = Rect {
+                x: area.x,
+                y,
+                width: area.width,
+                height: h,
+            };
             child.render(frame, rect, ctx);
             y = y.saturating_add(h).saturating_add(self.spacing);
         }
@@ -63,40 +85,67 @@ impl Component for VStack {
     }
 
     fn children_mut<'a>(&'a mut self) -> Vec<&'a mut (dyn Component + 'a)> {
-        self.children.iter_mut().map(|c| -> &'a mut (dyn Component + 'a) { c.as_mut() }).collect()
+        self.children
+            .iter_mut()
+            .map(|c| -> &'a mut (dyn Component + 'a) { c.as_mut() })
+            .collect()
     }
 
-    fn is_focusable(&self) -> bool { false }
+    fn is_focusable(&self) -> bool {
+        false
+    }
 
-    fn name(&self) -> &'static str { "VStack" }
+    fn name(&self) -> &'static str {
+        "VStack"
+    }
 
-    fn as_scroll_content(&self) -> Option<&dyn ScrollContent> { Some(self) }
+    fn as_scroll_content(&self) -> Option<&dyn ScrollContent> {
+        Some(self)
+    }
 }
 
 impl ScrollContent for VStack {
     fn measure(&self, width: u16) -> u16 {
         let n = self.children.len() as u16;
-        if n == 0 { return 0; }
+        if n == 0 {
+            return 0;
+        }
         let total_spacing = self.spacing.saturating_mul(n.saturating_sub(1));
         let children_sum: u16 = self
             .children
             .iter()
-            .map(|c| c.as_scroll_content().map(|sc| sc.measure(width)).unwrap_or(0))
+            .map(|c| {
+                c.as_scroll_content()
+                    .map(|sc| sc.measure(width))
+                    .unwrap_or(0)
+            })
             .sum();
         children_sum.saturating_add(total_spacing)
     }
 
     fn render_buf(&self, buf: &mut Buffer, area: Rect, ctx: &RenderContext) {
-        if self.children.is_empty() || area.height == 0 { return; }
+        if self.children.is_empty() || area.height == 0 {
+            return;
+        }
         let mut y = area.y;
         let max_y = area.y.saturating_add(area.height);
         for child in &self.children {
-            if y >= max_y { break; }
-            let h = child.as_scroll_content().map(|sc| sc.measure(area.width)).unwrap_or(0);
+            if y >= max_y {
+                break;
+            }
+            let h = child
+                .as_scroll_content()
+                .map(|sc| sc.measure(area.width))
+                .unwrap_or(0);
             if h > 0 {
                 let remaining = max_y.saturating_sub(y);
                 let draw_h = h.min(remaining);
-                let rect = Rect { x: area.x, y, width: area.width, height: draw_h };
+                let rect = Rect {
+                    x: area.x,
+                    y,
+                    width: area.width,
+                    height: draw_h,
+                };
                 if let Some(sc) = child.as_scroll_content() {
                     sc.render_buf(buf, rect, ctx);
                 }
@@ -116,7 +165,9 @@ mod tests {
 
     struct Leaf;
     impl Component for Leaf {
-        fn handle_event(&mut self, _: &Event, _: &mut Context) -> Action { Action::Absorbed }
+        fn handle_event(&mut self, _: &Event, _: &mut Context) -> Action {
+            Action::Absorbed
+        }
         fn render(&self, _: &mut Frame, _: Rect, _: &RenderContext) {}
     }
 
@@ -143,7 +194,8 @@ mod tests {
 
     #[test]
     fn measure_sums_children_with_spacing() {
-        let stack = VStack::new().spacing(1)
+        let stack = VStack::new()
+            .spacing(1)
             .add(Box::new(Text::new("a")))
             .add(Box::new(Text::new("b")))
             .add(Box::new(Text::new("c")));
@@ -180,8 +232,8 @@ mod tests {
         // so subsequent children render in the rows that would have been
         // occupied.
         let stack = VStack::new()
-            .add(Box::new(Leaf))                   // height 0 → collapses
-            .add(Box::new(Text::new("bb")));       // renders at row 0
+            .add(Box::new(Leaf)) // height 0 → collapses
+            .add(Box::new(Text::new("bb"))); // renders at row 0
         let theme = crate::theme::Theme::dark();
         let rctx = RenderContext::new(&theme);
         let area = Rect::new(0, 0, 4, 2);

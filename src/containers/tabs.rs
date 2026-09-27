@@ -4,11 +4,11 @@ use crate::action::Action;
 use crate::component::{Component, Context, RenderContext};
 use crate::event::Event;
 use crossterm::event::KeyCode;
+use ratatui::Frame;
 use ratatui::layout::{Constraint, Direction, Layout, Rect};
 use ratatui::style::{Modifier, Style};
 use ratatui::text::Line;
 use ratatui::widgets::{Block, Borders, Tabs as RatatuiTabs};
-use ratatui::Frame;
 
 pub struct Tabs {
     titles: Vec<String>,
@@ -17,17 +17,29 @@ pub struct Tabs {
 }
 
 impl Tabs {
-    pub fn new() -> Self { Self { titles: Vec::new(), panels: Vec::new(), active: 0 } }
+    pub fn new() -> Self {
+        Self {
+            titles: Vec::new(),
+            panels: Vec::new(),
+            active: 0,
+        }
+    }
     pub fn add(mut self, title: impl Into<String>, panel: Box<dyn Component>) -> Self {
-        self.titles.push(title.into()); self.panels.push(panel); self
+        self.titles.push(title.into());
+        self.panels.push(panel);
+        self
     }
     pub fn active_panel_mut<'a>(&'a mut self) -> Option<&'a mut (dyn Component + 'a)> {
-        self.panels.get_mut(self.active).map(|b| -> &'a mut (dyn Component + 'a) { b.as_mut() })
+        self.panels
+            .get_mut(self.active)
+            .map(|b| -> &'a mut (dyn Component + 'a) { b.as_mut() })
     }
 }
 
 impl Default for Tabs {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl Component for Tabs {
@@ -39,7 +51,11 @@ impl Component for Tabs {
                     return Action::Absorbed;
                 }
                 KeyCode::BackTab => {
-                    self.active = if self.active == 0 { self.titles.len().saturating_sub(1) } else { self.active - 1 };
+                    self.active = if self.active == 0 {
+                        self.titles.len().saturating_sub(1)
+                    } else {
+                        self.active - 1
+                    };
                     return Action::Absorbed;
                 }
                 _ => {}
@@ -61,12 +77,18 @@ impl Component for Tabs {
         let tabs = RatatuiTabs::new(titles)
             .block(Block::default().borders(Borders::ALL))
             .select(self.active)
-            .highlight_style(Style::default().fg(ctx.theme.primary).add_modifier(Modifier::BOLD));
+            .highlight_style(
+                Style::default()
+                    .fg(ctx.theme.primary)
+                    .add_modifier(Modifier::BOLD),
+            );
         frame.render_widget(tabs, chunks[0]);
         if let Some(panel) = self.panels.get(self.active) {
             panel.render(frame, chunks[1], ctx);
         }
     }
 
-    fn name(&self) -> &'static str { "Tabs" }
+    fn name(&self) -> &'static str {
+        "Tabs"
+    }
 }

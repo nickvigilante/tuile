@@ -12,9 +12,9 @@ use crate::component::{Component, Context, RenderContext};
 use crate::event::{Event, MouseKind};
 use crate::scroll_content::ScrollContent;
 use crossterm::event::KeyCode;
+use ratatui::Frame;
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
-use ratatui::Frame;
 use std::cell::RefCell;
 
 pub struct ScrollView {
@@ -32,7 +32,9 @@ impl ScrollView {
         }
     }
 
-    pub fn scroll_to(&mut self, y: u16) { self.scroll = y; }
+    pub fn scroll_to(&mut self, y: u16) {
+        self.scroll = y;
+    }
 
     pub fn scroll_by(&mut self, delta: i32) {
         let mag = delta.unsigned_abs().min(u16::MAX as u32) as u16;
@@ -48,15 +50,33 @@ impl Component for ScrollView {
     fn handle_event(&mut self, event: &Event, ctx: &mut Context) -> Action {
         match event {
             Event::Key(k) => match k.code {
-                KeyCode::PageDown => { self.scroll = self.scroll.saturating_add(10); Action::Absorbed }
-                KeyCode::PageUp => { self.scroll = self.scroll.saturating_sub(10); Action::Absorbed }
-                KeyCode::Home => { self.scroll = 0; Action::Absorbed }
-                KeyCode::End => { self.scroll = u16::MAX; Action::Absorbed }
+                KeyCode::PageDown => {
+                    self.scroll = self.scroll.saturating_add(10);
+                    Action::Absorbed
+                }
+                KeyCode::PageUp => {
+                    self.scroll = self.scroll.saturating_sub(10);
+                    Action::Absorbed
+                }
+                KeyCode::Home => {
+                    self.scroll = 0;
+                    Action::Absorbed
+                }
+                KeyCode::End => {
+                    self.scroll = u16::MAX;
+                    Action::Absorbed
+                }
                 _ => self.child.handle_event(event, ctx),
             },
             Event::Mouse(m) => match m.kind {
-                MouseKind::ScrollUp => { self.scroll = self.scroll.saturating_sub(3); Action::Absorbed }
-                MouseKind::ScrollDown => { self.scroll = self.scroll.saturating_add(3); Action::Absorbed }
+                MouseKind::ScrollUp => {
+                    self.scroll = self.scroll.saturating_sub(3);
+                    Action::Absorbed
+                }
+                MouseKind::ScrollDown => {
+                    self.scroll = self.scroll.saturating_add(3);
+                    Action::Absorbed
+                }
                 _ => self.child.handle_event(event, ctx),
             },
             _ => self.child.handle_event(event, ctx),
@@ -64,9 +84,13 @@ impl Component for ScrollView {
     }
 
     fn render(&self, frame: &mut Frame, area: Rect, ctx: &RenderContext) {
-        if area.width == 0 || area.height == 0 { return; }
+        if area.width == 0 || area.height == 0 {
+            return;
+        }
         let content_h = self.child.measure(area.width);
-        if content_h == 0 { return; }
+        if content_h == 0 {
+            return;
+        }
 
         let clamped_scroll = self.scroll.min(content_h.saturating_sub(area.height));
 
@@ -89,23 +113,27 @@ impl Component for ScrollView {
         }
     }
 
-    fn name(&self) -> &'static str { "ScrollView" }
+    fn name(&self) -> &'static str {
+        "ScrollView"
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::widgets::text::Text;
     use crate::containers::vstack::VStack;
     use crate::theme::Theme;
+    use crate::widgets::text::Text;
     use crossterm::event::{KeyEvent, KeyEventKind, KeyEventState, KeyModifiers};
-    use ratatui::backend::TestBackend;
     use ratatui::Terminal;
+    use ratatui::backend::TestBackend;
 
     fn key(c: KeyCode) -> Event {
         Event::Key(KeyEvent {
-            code: c, modifiers: KeyModifiers::NONE,
-            kind: KeyEventKind::Press, state: KeyEventState::NONE,
+            code: c,
+            modifiers: KeyModifiers::NONE,
+            kind: KeyEventKind::Press,
+            state: KeyEventState::NONE,
         })
     }
 
@@ -113,10 +141,12 @@ mod tests {
         let backend = TestBackend::new(width, height);
         let mut terminal = Terminal::new(backend).unwrap();
         let theme = Theme::dark();
-        terminal.draw(|f| {
-            let rctx = RenderContext::new(&theme);
-            sv.render(f, f.area(), &rctx);
-        }).unwrap();
+        terminal
+            .draw(|f| {
+                let rctx = RenderContext::new(&theme);
+                sv.render(f, f.area(), &rctx);
+            })
+            .unwrap();
         terminal
     }
 
@@ -185,10 +215,12 @@ mod tests {
         let backend = TestBackend::new(10, 10);
         let mut terminal = Terminal::new(backend).unwrap();
         let theme = Theme::dark();
-        terminal.draw(|f| {
-            let rctx = RenderContext::new(&theme);
-            sv.render(f, Rect::new(0, 0, 0, 0), &rctx);
-        }).unwrap();
+        terminal
+            .draw(|f| {
+                let rctx = RenderContext::new(&theme);
+                sv.render(f, Rect::new(0, 0, 0, 0), &rctx);
+            })
+            .unwrap();
     }
 
     #[test]

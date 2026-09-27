@@ -12,18 +12,18 @@ use ratatui::style::{Color, Modifier, Style};
 pub struct Theme {
     // Surface colors — background layers
     pub surface: Color,
-    pub surface_raised: Color,  // modals, dropdowns, tooltips
-    pub surface_sunken: Color,  // input field backgrounds
+    pub surface_raised: Color, // modals, dropdowns, tooltips
+    pub surface_sunken: Color, // input field backgrounds
 
     // Content colors — text on surfaces
     pub on_surface: Color,
-    pub on_surface_dim: Color,  // secondary text, hints
-    pub on_surface_strong: Color,  // headings, emphasized text
+    pub on_surface_dim: Color,    // secondary text, hints
+    pub on_surface_strong: Color, // headings, emphasized text
 
     // Accent — focus, active, selection
     pub primary: Color,
     pub on_primary: Color,
-    pub primary_dim: Color,  // muted accent (unfocused selection)
+    pub primary_dim: Color, // muted accent (unfocused selection)
 
     // Secondary — less emphasized interactive elements
     pub secondary: Color,
@@ -33,7 +33,7 @@ pub struct Theme {
     pub error: Color,
     pub on_error: Color,
     pub success: Color,
-    pub warning: Color,  // dirty markers, pending changes
+    pub warning: Color, // dirty markers, pending changes
     pub info: Color,
 
     // Borders & decoration

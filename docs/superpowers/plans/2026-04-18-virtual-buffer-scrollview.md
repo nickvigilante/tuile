@@ -10,13 +10,16 @@
 
 **Spec:** `docs/superpowers/specs/2026-04-18-virtual-buffer-scrollview-design.md`
 
----
+______________________________________________________________________
 
 ## Task 1: Introduce `ScrollContent` trait and `Component::as_scroll_content`
 
 **Files:**
+
 - Create: `src/scroll_content.rs`
+
 - Modify: `src/component.rs`
+
 - Modify: `src/lib.rs`
 
 - [ ] **Step 1: Write the failing test**
@@ -73,7 +76,7 @@ Expected: FAIL — `ScrollContent` is not a type, `as_scroll_content` is not a m
 
 Create `src/scroll_content.rs`:
 
-```rust
+````rust
 //! The `ScrollContent` sub-trait. Widgets implement this in addition to
 //! `Component` if they are safe to place inside a `ScrollView`. Widgets
 //! that do not implement it cannot be used as the direct child of a
@@ -101,7 +104,7 @@ pub trait ScrollContent: Component {
     /// rendering does not have access to `Frame::set_cursor_position`.
     fn render_buf(&self, buf: &mut Buffer, area: Rect, ctx: &RenderContext);
 }
-```
+````
 
 - [ ] **Step 4: Add `as_scroll_content` to `Component`**
 
@@ -171,11 +174,12 @@ git add src/scroll_content.rs src/component.rs src/lib.rs
 git commit -m "feat(scroll): add ScrollContent trait + Component::as_scroll_content"
 ```
 
----
+______________________________________________________________________
 
 ## Task 2: `ScrollContent` impl for `Toggle`
 
 **Files:**
+
 - Modify: `src/widgets/toggle.rs`
 
 - [ ] **Step 1: Write the failing test**
@@ -294,11 +298,12 @@ git add src/widgets/toggle.rs
 git commit -m "feat(scroll): implement ScrollContent for Toggle"
 ```
 
----
+______________________________________________________________________
 
 ## Task 3: `ScrollContent` impl for `Radio`
 
 **Files:**
+
 - Modify: `src/widgets/radio.rs`
 
 - [ ] **Step 1: Write the failing test**
@@ -419,11 +424,12 @@ git add src/widgets/radio.rs
 git commit -m "feat(scroll): implement ScrollContent for Radio"
 ```
 
----
+______________________________________________________________________
 
 ## Task 4: `ScrollContent` impl for `StatusBar`
 
 **Files:**
+
 - Modify: `src/widgets/status_bar.rs`
 
 - [ ] **Step 1: Write the failing test**
@@ -523,13 +529,16 @@ git add src/widgets/status_bar.rs
 git commit -m "feat(scroll): implement ScrollContent for StatusBar"
 ```
 
----
+______________________________________________________________________
 
 ## Task 5: New `Text` widget with `Component` + `ScrollContent` impls
 
 **Files:**
+
 - Create: `src/widgets/text.rs`
+
 - Modify: `src/widgets/mod.rs`
+
 - Modify: `src/lib.rs` (re-export — optional; widgets aren't re-exported at top level currently, so skip)
 
 - [ ] **Step 1: Write the failing test**
@@ -664,11 +673,12 @@ git add src/widgets/text.rs src/widgets/mod.rs
 git commit -m "feat(widgets): add Text widget with ScrollContent impl"
 ```
 
----
+______________________________________________________________________
 
 ## Task 6: `ScrollContent` impl for `VStack`
 
 **Files:**
+
 - Modify: `src/containers/vstack.rs`
 
 - [ ] **Step 1: Write the failing test**
@@ -843,11 +853,12 @@ git add src/containers/vstack.rs
 git commit -m "feat(scroll): implement ScrollContent for VStack"
 ```
 
----
+______________________________________________________________________
 
 ## Task 7: `ScrollContent` impl for `HStack`
 
 **Files:**
+
 - Modify: `src/containers/hstack.rs`
 
 - [ ] **Step 1: Write the failing test**
@@ -978,11 +989,12 @@ git add src/containers/hstack.rs
 git commit -m "feat(scroll): implement ScrollContent for HStack"
 ```
 
----
+______________________________________________________________________
 
 ## Task 8: `ScrollContent` impl for `Grid`
 
 **Files:**
+
 - Modify: `src/containers/grid.rs`
 
 - [ ] **Step 1: Write the failing test**
@@ -1137,11 +1149,12 @@ git add src/containers/grid.rs
 git commit -m "feat(scroll): implement ScrollContent for Grid"
 ```
 
----
+______________________________________________________________________
 
 ## Task 9: Refactor `ScrollView` to use virtual buffer
 
 **Files:**
+
 - Modify: `src/containers/scroll_view.rs`
 
 This task replaces the whole file. Existing v0.1 tests (`page_down_advances_by_ten`, `home_end_jump`) don't exist yet — the file has no test module today — so we add them as part of this task.
@@ -1380,11 +1393,12 @@ git add src/containers/scroll_view.rs
 git commit -m "feat(scroll): virtual-buffer ScrollView with ScrollContent child"
 ```
 
----
+______________________________________________________________________
 
 ## Task 10: Update SPEC.md
 
 **Files:**
+
 - Modify: `SPEC.md`
 
 - [ ] **Step 1: Remove ScrollView from "Known v0.1 limitations"**
@@ -1399,17 +1413,19 @@ In the "v0.2 roadmap" list (starting at line 470), delete the `**Virtual-buffer 
 
 Replace the existing `### ScrollView` entry (around line 373) with:
 
-```markdown
+````markdown
 ### ScrollView
 ```rust
 ScrollView::new(Box::new(long_content))
-```
+````
+
 - Wraps a child that implements `ScrollContent`; clips oversized content to the viewport via an internal scratch buffer
 - Handles PgUp / PgDn / Home / End / mouse wheel
 - Direct children **must** implement `ScrollContent` (compile-time check). Editable widgets (TextField, IntField, DateField, Dropdown when open, Calendar) intentionally do not — wrapping one in `ScrollView` is a compile error.
 - Grandchildren (children of a VStack inside a ScrollView, etc.) are handled via `Component::as_scroll_content`; non-ScrollContent grandchildren have measured height 0 and their slot collapses. Documented limitation for v0.2; v0.3+ may lift this.
 - Horizontal scrolling is not supported in v0.2 (content reflows to viewport width via `measure`).
-```
+
+````
 
 - [ ] **Step 4: Add `Text` to the widget catalog**
 
@@ -1420,12 +1436,14 @@ Add a new entry after the `StatusBar` section, before `List`:
 ```rust
 Text::new("Some read-only content that may wrap.")
     .alignment(ratatui::layout::Alignment::Left)
-```
+````
+
 - Read-only multi-line text. Wraps `ratatui::widgets::Paragraph`.
 - Implements `ScrollContent` — primary widget for scrollable text blocks.
 - `.no_wrap()` disables word-wrap; `.alignment(...)` sets alignment.
 - Rich styled runs are deferred to a future `RichText` widget.
-```
+
+````
 
 - [ ] **Step 5: Add a "ScrollContent" subsection under "Core types"**
 
@@ -1439,12 +1457,13 @@ pub trait ScrollContent: Component {
     fn measure(&self, width: u16) -> u16;
     fn render_buf(&self, buf: &mut Buffer, area: Rect, ctx: &RenderContext);
 }
-```
+````
 
 Implemented by widgets that are safe to render into an off-screen buffer (no cursor, no open overlays). Required by `ScrollView` for its direct child. The `Component` trait has a default `as_scroll_content(&self) -> Option<&dyn ScrollContent>` that returns `None`; widgets implementing `ScrollContent` override it to `Some(self)` so containers can delegate through `Box<dyn Component>` without a downcast.
 
 v0.2 ships `ScrollContent` for: `Text`, `VStack`, `HStack`, `Grid`, `Toggle`, `Radio`, `StatusBar`. Editable widgets (`TextField`, `IntField`, `FloatField`, `DollarField`, `DateField`, `Calendar`) and overlay widgets (`Dropdown`) intentionally do not implement it.
-```
+
+````
 
 - [ ] **Step 6: Update the "Tests you can run right now" count**
 
@@ -1464,7 +1483,7 @@ In the "Design decisions worth knowing" section, add a new subsection:
 Making `ScrollView::new` take `Box<dyn ScrollContent>` (instead of `Box<dyn Component>`) gives us a compile-time check that the direct child is scroll-safe. Editable widgets (which can't render correctly into a buffer without cursor support) literally cannot compile inside a `ScrollView`. Adding the methods directly to `Component` with default `panic!()` or no-op implementations would push that check to runtime or produce silent rendering bugs.
 
 v0.3+ can add `fn cursor_hint(&self) -> Option<Position> { None }` to `ScrollContent` to make editable widgets work inside a ScrollView, without any breaking change to the v0.2 API.
-```
+````
 
 - [ ] **Step 9: Commit**
 
@@ -1473,11 +1492,12 @@ git add SPEC.md
 git commit -m "docs: update SPEC for v0.2 ScrollView + Text + ScrollContent"
 ```
 
----
+______________________________________________________________________
 
 ## Task 11: Final verification and cleanup pass
 
 **Files:**
+
 - None (verification only)
 
 - [ ] **Step 1: Verify the full test suite**
@@ -1518,11 +1538,12 @@ Expected: compile error mentioning `the trait bound ... ScrollContent ... is not
 
 No commit; this task is verification only. If everything passes, the v0.2 ScrollView work is complete.
 
----
+______________________________________________________________________
 
 ## Plan self-review
 
 **Spec coverage:**
+
 - Virtual-buffer clipping for vertical scrolling → Task 9.
 - `ScrollContent` sub-trait → Task 1.
 - `measure(width) -> u16` → Task 1 (trait), Tasks 2–8 (impls).
@@ -1535,6 +1556,7 @@ No commit; this task is verification only. If everything passes, the v0.2 Scroll
 - No `trybuild` → confirmed in Task 11 Step 4 (manual check only).
 
 **Type consistency check:**
+
 - `ScrollContent::measure` signature matches across trait definition (Task 1) and all impls (Tasks 2–8).
 - `ScrollContent::render_buf` signature matches: `(&self, &mut Buffer, Rect, &RenderContext)` everywhere.
 - `as_scroll_content` returns `Option<&dyn ScrollContent>` everywhere.

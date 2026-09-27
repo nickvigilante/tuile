@@ -90,12 +90,7 @@ mod tests {
 
     fn assert_aa(label: &str, fg: Color, bg: Color) {
         let r = contrast_ratio(fg, bg).unwrap_or(0.0);
-        assert!(
-            r >= 4.5,
-            "{} contrast {:.2} fails AA (need ≥4.5)",
-            label,
-            r
-        );
+        assert!(r >= 4.5, "{} contrast {:.2} fails AA (need ≥4.5)", label, r);
     }
 
     #[test]
