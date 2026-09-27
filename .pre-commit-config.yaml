@@ -1,0 +1,53 @@
+# Pre-commit hooks for this repo. Formats files and scans for secrets before
+# each commit; the same hooks run in CI (.github/workflows/lint.yml) via
+# `pre-commit run --all-files`, so local and CI can't drift.
+#
+# One-time local setup:
+#   brew install pre-commit betterleaks
+#   pre-commit install
+#
+# Formatter/linter per file type:
+#   Rust      -> cargo fmt (format) + cargo clippy (lint, -D warnings)
+#   Markdown  -> mdformat (+ mdformat-tables; CommonMark-strict, won't mangle
+#                snake_case prose or rewrite embedded code blocks)
+#   Secrets   -> betterleaks
+#   All files -> whitespace / EOF / merge-conflict hygiene
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: mixed-line-ending
+        args: [--fix=lf]
+      - id: check-merge-conflict
+      - id: check-added-large-files
+
+  - repo: https://github.com/hukkin/mdformat
+    rev: 0.7.22
+    hooks:
+      - id: mdformat
+        args: [--wrap, keep, --number]
+        additional_dependencies:
+          - mdformat-tables
+
+  - repo: local
+    hooks:
+      - id: cargo-fmt
+        name: cargo fmt (format Rust)
+        entry: cargo fmt -- --check
+        language: system
+        files: \.rs$
+        pass_filenames: false
+      - id: cargo-clippy
+        name: cargo clippy (lint Rust)
+        entry: cargo clippy --all-targets --all-features -- -D warnings
+        language: system
+        files: \.rs$
+        pass_filenames: false
+
+  - repo: https://github.com/betterleaks/betterleaks
+    rev: v1.3.1
+    hooks:
+      - id: betterleaks
