@@ -3,8 +3,8 @@
 use crate::action::Action;
 use crate::event::Event;
 use crate::theme::Theme;
-use ratatui::layout::Rect;
 use ratatui::Frame;
+use ratatui::layout::Rect;
 
 /// Context passed to `handle_event`. Contains cross-cutting state like the
 /// current theme and (eventually) the focus manager.
@@ -85,25 +85,33 @@ pub trait Component {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::scroll_content::ScrollContent;
     use crate::action::Action;
     use crate::event::Event;
+    use crate::scroll_content::ScrollContent;
     use ratatui::buffer::Buffer;
 
     struct Plain;
     impl Component for Plain {
-        fn handle_event(&mut self, _: &Event, _: &mut Context) -> Action { Action::Ignored }
+        fn handle_event(&mut self, _: &Event, _: &mut Context) -> Action {
+            Action::Ignored
+        }
         fn render(&self, _: &mut ratatui::Frame, _: Rect, _: &RenderContext) {}
     }
 
     struct Scrollable;
     impl Component for Scrollable {
-        fn handle_event(&mut self, _: &Event, _: &mut Context) -> Action { Action::Ignored }
+        fn handle_event(&mut self, _: &Event, _: &mut Context) -> Action {
+            Action::Ignored
+        }
         fn render(&self, _: &mut ratatui::Frame, _: Rect, _: &RenderContext) {}
-        fn as_scroll_content(&self) -> Option<&dyn ScrollContent> { Some(self) }
+        fn as_scroll_content(&self) -> Option<&dyn ScrollContent> {
+            Some(self)
+        }
     }
     impl ScrollContent for Scrollable {
-        fn measure(&self, _: u16) -> u16 { 7 }
+        fn measure(&self, _: u16) -> u16 {
+            7
+        }
         fn render_buf(&self, _: &mut Buffer, _: Rect, _: &RenderContext) {}
     }
 

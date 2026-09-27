@@ -4,9 +4,9 @@ use crate::action::Action;
 use crate::component::{Component, Context, RenderContext};
 use crate::event::Event;
 use crate::scroll_content::ScrollContent;
+use ratatui::Frame;
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
-use ratatui::Frame;
 
 pub struct Grid {
     rows: u16,
@@ -16,7 +16,9 @@ pub struct Grid {
 
 impl Grid {
     pub fn new(rows: u16, cols: u16) -> Self {
-        let cells = (0..rows).map(|_| (0..cols).map(|_| None).collect()).collect();
+        let cells = (0..rows)
+            .map(|_| (0..cols).map(|_| None).collect())
+            .collect();
         Self { rows, cols, cells }
     }
 
@@ -35,14 +37,18 @@ impl Component for Grid {
         for row in &mut self.cells {
             for cell in row.iter_mut().flatten() {
                 let a = cell.handle_event(event, ctx);
-                if a.is_handled() { return a; }
+                if a.is_handled() {
+                    return a;
+                }
             }
         }
         Action::Ignored
     }
 
     fn render(&self, frame: &mut Frame, area: Rect, ctx: &RenderContext) {
-        if self.rows == 0 || self.cols == 0 { return; }
+        if self.rows == 0 || self.cols == 0 {
+            return;
+        }
         let row_h = area.height / self.rows;
         let col_w = area.width / self.cols;
         for (r, row) in self.cells.iter().enumerate() {
@@ -60,14 +66,22 @@ impl Component for Grid {
         }
     }
 
-    fn is_focusable(&self) -> bool { false }
-    fn name(&self) -> &'static str { "Grid" }
-    fn as_scroll_content(&self) -> Option<&dyn ScrollContent> { Some(self) }
+    fn is_focusable(&self) -> bool {
+        false
+    }
+    fn name(&self) -> &'static str {
+        "Grid"
+    }
+    fn as_scroll_content(&self) -> Option<&dyn ScrollContent> {
+        Some(self)
+    }
 }
 
 impl ScrollContent for Grid {
     fn measure(&self, width: u16) -> u16 {
-        if self.rows == 0 || self.cols == 0 { return 0; }
+        if self.rows == 0 || self.cols == 0 {
+            return 0;
+        }
         let col_w = width / self.cols;
         let mut total: u16 = 0;
         for row in &self.cells {
@@ -87,7 +101,9 @@ impl ScrollContent for Grid {
     }
 
     fn render_buf(&self, buf: &mut Buffer, area: Rect, ctx: &RenderContext) {
-        if self.rows == 0 || self.cols == 0 { return; }
+        if self.rows == 0 || self.cols == 0 {
+            return;
+        }
         let col_w = area.width / self.cols;
         let mut y = area.y;
         for row in &self.cells {
@@ -155,9 +171,10 @@ mod tests {
 
     #[test]
     fn render_buf_places_cells() {
-        let g = Grid::new(1, 2)
-            .set(0, 0, Box::new(Text::new("a")))
-            .set(0, 1, Box::new(Text::new("b")));
+        let g =
+            Grid::new(1, 2)
+                .set(0, 0, Box::new(Text::new("a")))
+                .set(0, 1, Box::new(Text::new("b")));
         let theme = crate::theme::Theme::dark();
         let rctx = RenderContext::new(&theme);
         let area = Rect::new(0, 0, 2, 1);

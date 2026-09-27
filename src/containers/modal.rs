@@ -4,9 +4,9 @@
 use crate::action::Action;
 use crate::component::{Component, Context, RenderContext};
 use crate::event::Event;
+use ratatui::Frame;
 use ratatui::layout::{Constraint, Direction, Layout, Rect};
 use ratatui::widgets::{Block, Borders, Clear};
-use ratatui::Frame;
 
 pub struct Modal {
     child: Box<dyn Component>,
@@ -18,14 +18,28 @@ pub struct Modal {
 
 impl Modal {
     pub fn new(title: impl Into<String>, child: Box<dyn Component>) -> Self {
-        Self { child, title: title.into(), width_pct: 70, height_pct: 70, open: false }
+        Self {
+            child,
+            title: title.into(),
+            width_pct: 70,
+            height_pct: 70,
+            open: false,
+        }
     }
     pub fn size_pct(mut self, width: u16, height: u16) -> Self {
-        self.width_pct = width; self.height_pct = height; self
+        self.width_pct = width;
+        self.height_pct = height;
+        self
     }
-    pub fn show(&mut self) { self.open = true; }
-    pub fn hide(&mut self) { self.open = false; }
-    pub fn child_mut(&mut self) -> &mut dyn Component { self.child.as_mut() }
+    pub fn show(&mut self) {
+        self.open = true;
+    }
+    pub fn hide(&mut self) {
+        self.open = false;
+    }
+    pub fn child_mut(&mut self) -> &mut dyn Component {
+        self.child.as_mut()
+    }
 }
 
 fn centered_rect(pct_x: u16, pct_y: u16, area: Rect) -> Rect {
@@ -49,12 +63,16 @@ fn centered_rect(pct_x: u16, pct_y: u16, area: Rect) -> Rect {
 
 impl Component for Modal {
     fn handle_event(&mut self, event: &Event, ctx: &mut Context) -> Action {
-        if !self.open { return Action::Ignored; }
+        if !self.open {
+            return Action::Ignored;
+        }
         self.child.handle_event(event, ctx)
     }
 
     fn render(&self, frame: &mut Frame, area: Rect, ctx: &RenderContext) {
-        if !self.open { return; }
+        if !self.open {
+            return;
+        }
         let rect = centered_rect(self.width_pct, self.height_pct, area);
         frame.render_widget(Clear, rect);
         let block = Block::default()
@@ -66,6 +84,10 @@ impl Component for Modal {
         self.child.render(frame, inner, ctx);
     }
 
-    fn traps_focus(&self) -> bool { self.open }
-    fn name(&self) -> &'static str { "Modal" }
+    fn traps_focus(&self) -> bool {
+        self.open
+    }
+    fn name(&self) -> &'static str {
+        "Modal"
+    }
 }

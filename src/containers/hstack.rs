@@ -4,9 +4,9 @@ use crate::action::Action;
 use crate::component::{Component, Context, RenderContext};
 use crate::event::Event;
 use crate::scroll_content::ScrollContent;
+use ratatui::Frame;
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
-use ratatui::Frame;
 
 pub struct HStack {
     children: Vec<Box<dyn Component>>,
@@ -14,31 +14,48 @@ pub struct HStack {
 }
 
 impl HStack {
-    pub fn new() -> Self { Self { children: Vec::new(), spacing: 0 } }
-    pub fn spacing(mut self, n: u16) -> Self { self.spacing = n; self }
+    pub fn new() -> Self {
+        Self {
+            children: Vec::new(),
+            spacing: 0,
+        }
+    }
+    pub fn spacing(mut self, n: u16) -> Self {
+        self.spacing = n;
+        self
+    }
     #[allow(clippy::should_implement_trait)] // deliberate builder-API choice; not std::ops::Add
     pub fn add(mut self, child: Box<dyn Component>) -> Self {
-        self.children.push(child); self
+        self.children.push(child);
+        self
     }
-    pub fn push(&mut self, child: Box<dyn Component>) { self.children.push(child); }
+    pub fn push(&mut self, child: Box<dyn Component>) {
+        self.children.push(child);
+    }
 }
 
 impl Default for HStack {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl Component for HStack {
     fn handle_event(&mut self, event: &Event, ctx: &mut Context) -> Action {
         for child in &mut self.children {
             let a = child.handle_event(event, ctx);
-            if a.is_handled() { return a; }
+            if a.is_handled() {
+                return a;
+            }
         }
         Action::Ignored
     }
 
     fn render(&self, frame: &mut Frame, area: Rect, ctx: &RenderContext) {
         let n = self.children.len() as u16;
-        if n == 0 || area.width == 0 { return; }
+        if n == 0 || area.width == 0 {
+            return;
+        }
         let total_spacing = self.spacing.saturating_mul(n.saturating_sub(1));
         let usable = area.width.saturating_sub(total_spacing);
         let per_child = usable / n.max(1);
@@ -48,8 +65,15 @@ impl Component for HStack {
         for (i, child) in self.children.iter().enumerate() {
             let extra = if (i as u16) < remainder { 1 } else { 0 };
             let w = per_child + extra;
-            if w == 0 { continue; }
-            let rect = Rect { x, y: area.y, width: w, height: area.height };
+            if w == 0 {
+                continue;
+            }
+            let rect = Rect {
+                x,
+                y: area.y,
+                width: w,
+                height: area.height,
+            };
             child.render(frame, rect, ctx);
             x = x.saturating_add(w).saturating_add(self.spacing);
         }
@@ -60,18 +84,29 @@ impl Component for HStack {
     }
 
     fn children_mut<'a>(&'a mut self) -> Vec<&'a mut (dyn Component + 'a)> {
-        self.children.iter_mut().map(|c| -> &'a mut (dyn Component + 'a) { c.as_mut() }).collect()
+        self.children
+            .iter_mut()
+            .map(|c| -> &'a mut (dyn Component + 'a) { c.as_mut() })
+            .collect()
     }
 
-    fn is_focusable(&self) -> bool { false }
-    fn name(&self) -> &'static str { "HStack" }
-    fn as_scroll_content(&self) -> Option<&dyn ScrollContent> { Some(self) }
+    fn is_focusable(&self) -> bool {
+        false
+    }
+    fn name(&self) -> &'static str {
+        "HStack"
+    }
+    fn as_scroll_content(&self) -> Option<&dyn ScrollContent> {
+        Some(self)
+    }
 }
 
 impl ScrollContent for HStack {
     fn measure(&self, width: u16) -> u16 {
         let n = self.children.len() as u16;
-        if n == 0 || width == 0 { return 0; }
+        if n == 0 || width == 0 {
+            return 0;
+        }
         let total_spacing = self.spacing.saturating_mul(n.saturating_sub(1));
         let usable = width.saturating_sub(total_spacing);
         let per_child = usable / n.max(1);
@@ -82,7 +117,10 @@ impl ScrollContent for HStack {
             .map(|(i, child)| {
                 let extra = if (i as u16) < remainder { 1 } else { 0 };
                 let child_w = per_child + extra;
-                child.as_scroll_content().map(|sc| sc.measure(child_w)).unwrap_or(0)
+                child
+                    .as_scroll_content()
+                    .map(|sc| sc.measure(child_w))
+                    .unwrap_or(0)
             })
             .max()
             .unwrap_or(0)
@@ -90,7 +128,9 @@ impl ScrollContent for HStack {
 
     fn render_buf(&self, buf: &mut Buffer, area: Rect, ctx: &RenderContext) {
         let n = self.children.len() as u16;
-        if n == 0 || area.width == 0 { return; }
+        if n == 0 || area.width == 0 {
+            return;
+        }
         let total_spacing = self.spacing.saturating_mul(n.saturating_sub(1));
         let usable = area.width.saturating_sub(total_spacing);
         let per_child = usable / n.max(1);
@@ -99,8 +139,15 @@ impl ScrollContent for HStack {
         for (i, child) in self.children.iter().enumerate() {
             let extra = if (i as u16) < remainder { 1 } else { 0 };
             let w = per_child + extra;
-            if w == 0 { continue; }
-            let rect = Rect { x, y: area.y, width: w, height: area.height };
+            if w == 0 {
+                continue;
+            }
+            let rect = Rect {
+                x,
+                y: area.y,
+                width: w,
+                height: area.height,
+            };
             if let Some(sc) = child.as_scroll_content() {
                 sc.render_buf(buf, rect, ctx);
             }

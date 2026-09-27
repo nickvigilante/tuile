@@ -8,14 +8,18 @@ use crate::validation::ValidationResult;
 use crate::widgets::int_field::IntField;
 use chrono::{Datelike, NaiveDate};
 use crossterm::event::KeyCode;
+use ratatui::Frame;
 use ratatui::layout::Rect;
 use ratatui::style::Style;
 use ratatui::text::{Line, Span};
 use ratatui::widgets::Paragraph;
-use ratatui::Frame;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum Sub { Year, Month, Day }
+enum Sub {
+    Year,
+    Month,
+    Day,
+}
 
 pub struct DateField {
     year: IntField,
@@ -67,8 +71,12 @@ impl DateField {
         self.committed = date;
     }
 
-    pub fn is_dirty(&self) -> bool { self.value() != self.committed }
-    pub fn editing(&self) -> bool { self.editing }
+    pub fn is_dirty(&self) -> bool {
+        self.value() != self.committed
+    }
+    pub fn editing(&self) -> bool {
+        self.editing
+    }
     pub fn start_editing(&mut self) {
         self.editing = true;
         self.focus = Sub::Year;
@@ -76,8 +84,11 @@ impl DateField {
     }
 
     pub fn validate(&self) -> ValidationResult {
-        if self.value().is_some() { ValidationResult::Valid }
-        else { ValidationResult::Invalid("Invalid date".into()) }
+        if self.value().is_some() {
+            ValidationResult::Valid
+        } else {
+            ValidationResult::Invalid("Invalid date".into())
+        }
     }
 }
 
@@ -151,7 +162,9 @@ impl Component for DateField {
 
         let dirty = if self.is_dirty() {
             Span::styled(" •", Style::default().fg(theme.warning))
-        } else { Span::raw("") };
+        } else {
+            Span::raw("")
+        };
 
         let spans = vec![
             Span::styled(format!("{}: ", self.label), label_style),
@@ -165,5 +178,7 @@ impl Component for DateField {
         frame.render_widget(Paragraph::new(Line::from(spans)), area);
     }
 
-    fn name(&self) -> &'static str { "DateField" }
+    fn name(&self) -> &'static str {
+        "DateField"
+    }
 }

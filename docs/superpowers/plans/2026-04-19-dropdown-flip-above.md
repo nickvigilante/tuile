@@ -10,11 +10,12 @@
 
 **Spec:** `docs/superpowers/specs/2026-04-19-dropdown-flip-above-design.md`
 
----
+______________________________________________________________________
 
 ## Task 1: Add `overlay_rect` helper with unit tests (TDD)
 
 **Files:**
+
 - Modify: `src/widgets/dropdown.rs`
 
 - [ ] **Step 1: Write the failing tests**
@@ -116,11 +117,12 @@ git add src/widgets/dropdown.rs
 git commit -m "feat(dropdown): add overlay_rect placement helper with tests"
 ```
 
----
+______________________________________________________________________
 
 ## Task 2: Wire `overlay_rect` into `render()`
 
 **Files:**
+
 - Modify: `src/widgets/dropdown.rs`
 
 - [ ] **Step 1: Verify no regression test exists yet for rendering position**
@@ -171,11 +173,12 @@ git add src/widgets/dropdown.rs
 git commit -m "feat(dropdown): use overlay_rect in render; flip above when below full"
 ```
 
----
+______________________________________________________________________
 
 ## Task 3: Update SPEC.md
 
 **Files:**
+
 - Modify: `SPEC.md`
 
 - [ ] **Step 1: Locate the "Known v0.2 limitations" section**
@@ -215,7 +218,7 @@ git add SPEC.md
 git commit -m "docs: Dropdown flip-above is implemented; update SPEC"
 ```
 
----
+______________________________________________________________________
 
 ## Task 4: Final verification
 
@@ -246,11 +249,12 @@ If convenient, spin up the `ynab-budget-manager` host app or a small example, an
 
 No commit; verification only. If all three verifications pass, the feature is ready for PR.
 
----
+______________________________________________________________________
 
 ## Plan self-review
 
 **Spec coverage:**
+
 - Placement rule (fits-below / flip-above-full / flip-above-clamped / stay-below-clamped) → Task 1 (helper) + Task 1 tests cover all four branches.
 - Extracted pure helper `overlay_rect` → Task 1.
 - `render()` wired to use the helper → Task 2.
@@ -264,6 +268,7 @@ No commit; verification only. If all three verifications pass, the feature is re
 **Type consistency:** `overlay_rect` signature is identical across Task 1 definition, Task 1 tests (5 call sites), and Task 2 usage in `render()`.
 
 **Test branch coverage check:**
+
 - Branch 1 (`desired_h <= room_below`): `overlay_rect_opens_below_when_fits`.
 - Branch 2 (`room_above > room_below`, exact fit): `overlay_rect_flips_above_when_below_insufficient_and_above_has_more_room`.
 - Branch 2 clamped (`room_above > room_below`, `desired_h > room_above`): `overlay_rect_clamps_above_when_room_above_smaller_than_desired`.

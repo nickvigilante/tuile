@@ -5,10 +5,10 @@ use crate::action::Action;
 use crate::component::{Component, Context, RenderContext};
 use crate::event::Event;
 use crate::scroll_content::ScrollContent;
+use ratatui::Frame;
 use ratatui::buffer::Buffer;
 use ratatui::layout::{Alignment, Rect};
 use ratatui::widgets::{Paragraph, Widget, Wrap};
-use ratatui::Frame;
 
 pub struct Text {
     content: String,
@@ -18,31 +18,53 @@ pub struct Text {
 
 impl Text {
     pub fn new(s: impl Into<String>) -> Self {
-        Self { content: s.into(), wrap: true, alignment: Alignment::Left }
+        Self {
+            content: s.into(),
+            wrap: true,
+            alignment: Alignment::Left,
+        }
     }
-    pub fn no_wrap(mut self) -> Self { self.wrap = false; self }
-    pub fn alignment(mut self, a: Alignment) -> Self { self.alignment = a; self }
+    pub fn no_wrap(mut self) -> Self {
+        self.wrap = false;
+        self
+    }
+    pub fn alignment(mut self, a: Alignment) -> Self {
+        self.alignment = a;
+        self
+    }
 
     fn build_paragraph(&self) -> Paragraph<'_> {
         let mut p = Paragraph::new(self.content.as_str()).alignment(self.alignment);
-        if self.wrap { p = p.wrap(Wrap { trim: false }); }
+        if self.wrap {
+            p = p.wrap(Wrap { trim: false });
+        }
         p
     }
 }
 
 impl Component for Text {
-    fn handle_event(&mut self, _: &Event, _: &mut Context) -> Action { Action::Ignored }
+    fn handle_event(&mut self, _: &Event, _: &mut Context) -> Action {
+        Action::Ignored
+    }
     fn render(&self, frame: &mut Frame, area: Rect, _ctx: &RenderContext) {
         frame.render_widget(self.build_paragraph(), area);
     }
-    fn is_focusable(&self) -> bool { false }
-    fn name(&self) -> &'static str { "Text" }
-    fn as_scroll_content(&self) -> Option<&dyn ScrollContent> { Some(self) }
+    fn is_focusable(&self) -> bool {
+        false
+    }
+    fn name(&self) -> &'static str {
+        "Text"
+    }
+    fn as_scroll_content(&self) -> Option<&dyn ScrollContent> {
+        Some(self)
+    }
 }
 
 impl ScrollContent for Text {
     fn measure(&self, width: u16) -> u16 {
-        if width == 0 { return 0; }
+        if width == 0 {
+            return 0;
+        }
         let w = width as usize;
         let mut total: u32 = 0;
         for line in self.content.split('\n') {
@@ -86,7 +108,11 @@ fn count_wrapped_lines(line: &str, width: usize, wrap: bool) -> u32 {
             }
             continue;
         }
-        let needed = if pos == 0 { word_len } else { pos + 1 + word_len };
+        let needed = if pos == 0 {
+            word_len
+        } else {
+            pos + 1 + word_len
+        };
         if needed <= width {
             pos = needed;
         } else {

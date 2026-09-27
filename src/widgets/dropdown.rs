@@ -6,11 +6,11 @@ use crate::component::{Component, Context, RenderContext};
 use crate::event::Event;
 use crate::validation::ValidationResult;
 use crossterm::event::KeyCode;
+use ratatui::Frame;
 use ratatui::layout::Rect;
 use ratatui::style::{Modifier, Style};
 use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, Borders, Clear, Paragraph};
-use ratatui::Frame;
 
 pub struct Dropdown {
     options: Vec<String>,
@@ -38,16 +38,27 @@ impl Dropdown {
             allow_create: false,
         }
     }
-    pub fn required(mut self) -> Self { self.required = true; self }
-    pub fn allow_create(mut self) -> Self { self.allow_create = true; self }
-    pub fn selected_value(&self) -> Option<&str> {
-        self.selected.and_then(|i| self.options.get(i).map(|s| s.as_str()))
+    pub fn required(mut self) -> Self {
+        self.required = true;
+        self
     }
-    pub fn selected_index(&self) -> Option<usize> { self.selected }
+    pub fn allow_create(mut self) -> Self {
+        self.allow_create = true;
+        self
+    }
+    pub fn selected_value(&self) -> Option<&str> {
+        self.selected
+            .and_then(|i| self.options.get(i).map(|s| s.as_str()))
+    }
+    pub fn selected_index(&self) -> Option<usize> {
+        self.selected
+    }
     pub fn set_options(&mut self, opts: Vec<String>) {
         self.options = opts;
         if let Some(i) = self.selected {
-            if i >= self.options.len() { self.selected = None; }
+            if i >= self.options.len() {
+                self.selected = None;
+            }
         }
         self.committed = self.selected;
     }
@@ -55,13 +66,21 @@ impl Dropdown {
         self.selected = self.options.iter().position(|o| o == v);
         self.committed = self.selected;
     }
-    pub fn is_dirty(&self) -> bool { self.selected != self.committed }
-    pub fn commit(&mut self) { self.committed = self.selected; }
-    pub fn revert(&mut self) { self.selected = self.committed; }
+    pub fn is_dirty(&self) -> bool {
+        self.selected != self.committed
+    }
+    pub fn commit(&mut self) {
+        self.committed = self.selected;
+    }
+    pub fn revert(&mut self) {
+        self.selected = self.committed;
+    }
     pub fn validate(&self) -> ValidationResult {
         if self.required && self.selected.is_none() {
             ValidationResult::Invalid("Selection required".into())
-        } else { ValidationResult::Valid }
+        } else {
+            ValidationResult::Valid
+        }
     }
 
     fn filtered(&self) -> Vec<usize> {
@@ -69,16 +88,21 @@ impl Dropdown {
             (0..self.options.len()).collect()
         } else {
             let l = self.filter.to_ascii_lowercase();
-            self.options.iter().enumerate()
+            self.options
+                .iter()
+                .enumerate()
                 .filter(|(_, o)| o.to_ascii_lowercase().contains(&l))
-                .map(|(i, _)| i).collect()
+                .map(|(i, _)| i)
+                .collect()
         }
     }
 }
 
 impl Component for Dropdown {
     fn handle_event(&mut self, event: &Event, _ctx: &mut Context) -> Action {
-        let Event::Key(k) = event else { return Action::Ignored; };
+        let Event::Key(k) = event else {
+            return Action::Ignored;
+        };
         if !self.open {
             match k.code {
                 KeyCode::Enter | KeyCode::Char(' ') => {
@@ -87,14 +111,26 @@ impl Component for Dropdown {
                     self.cursor = 0;
                     Action::Absorbed
                 }
-                KeyCode::Esc => { self.revert(); Action::Cancel }
+                KeyCode::Esc => {
+                    self.revert();
+                    Action::Cancel
+                }
                 _ => Action::Ignored,
             }
         } else {
             let filtered = self.filtered();
             match k.code {
-                KeyCode::Esc => { self.open = false; self.filter.clear(); Action::Cancel }
-                KeyCode::Up => { if self.cursor > 0 { self.cursor -= 1; } Action::Absorbed }
+                KeyCode::Esc => {
+                    self.open = false;
+                    self.filter.clear();
+                    Action::Cancel
+                }
+                KeyCode::Up => {
+                    if self.cursor > 0 {
+                        self.cursor -= 1;
+                    }
+                    Action::Absorbed
+                }
                 KeyCode::Down => {
                     if !filtered.is_empty() && self.cursor + 1 < filtered.len() {
                         self.cursor += 1;
@@ -115,10 +151,20 @@ impl Component for Dropdown {
                         self.open = false;
                         self.filter.clear();
                         Action::Submit
-                    } else { Action::Absorbed }
+                    } else {
+                        Action::Absorbed
+                    }
                 }
-                KeyCode::Char(ch) => { self.filter.push(ch); self.cursor = 0; Action::Absorbed }
-                KeyCode::Backspace => { self.filter.pop(); self.cursor = 0; Action::Absorbed }
+                KeyCode::Char(ch) => {
+                    self.filter.push(ch);
+                    self.cursor = 0;
+                    Action::Absorbed
+                }
+                KeyCode::Backspace => {
+                    self.filter.pop();
+                    self.cursor = 0;
+                    Action::Absorbed
+                }
                 _ => Action::Absorbed,
             }
         }
@@ -128,7 +174,9 @@ impl Component for Dropdown {
         let theme = ctx.theme;
         let dirty = if self.is_dirty() {
             Span::styled(" •", Style::default().fg(theme.warning))
-        } else { Span::raw("") };
+        } else {
+            Span::raw("")
+        };
 
         let display = self.selected_value().unwrap_or("(none)").to_string();
         let arrow = if self.open { "▲" } else { "▼" };
@@ -147,18 +195,23 @@ impl Component for Dropdown {
             let desired_h = (filtered.len().min(max_visible) + 3) as u16;
             let overlay = overlay_rect(area, frame.area(), desired_h);
             frame.render_widget(Clear, overlay);
-            let mut lines = vec![
-                Line::styled(
-                    if self.filter.is_empty() { "Type to filter…".to_string() } else { self.filter.clone() },
-                    Style::default().fg(theme.info),
-                )
-            ];
+            let mut lines = vec![Line::styled(
+                if self.filter.is_empty() {
+                    "Type to filter…".to_string()
+                } else {
+                    self.filter.clone()
+                },
+                Style::default().fg(theme.info),
+            )];
             for (vis, &orig) in filtered.iter().enumerate().take(max_visible) {
                 let opt = &self.options[orig];
                 let is_cursor = vis == self.cursor;
                 let is_current = self.selected == Some(orig);
                 let style = if is_cursor {
-                    Style::default().fg(theme.on_primary).bg(theme.primary).add_modifier(Modifier::BOLD)
+                    Style::default()
+                        .fg(theme.on_primary)
+                        .bg(theme.primary)
+                        .add_modifier(Modifier::BOLD)
                 } else if is_current {
                     Style::default().fg(theme.primary)
                 } else {
@@ -175,15 +228,19 @@ impl Component for Dropdown {
             }
             frame.render_widget(
                 Paragraph::new(lines).block(
-                    Block::default().borders(Borders::ALL).title(format!("{} ▼", self.label))
-                        .border_style(Style::default().fg(theme.border_focused))
+                    Block::default()
+                        .borders(Borders::ALL)
+                        .title(format!("{} ▼", self.label))
+                        .border_style(Style::default().fg(theme.border_focused)),
                 ),
                 overlay,
             );
         }
     }
 
-    fn name(&self) -> &'static str { "Dropdown" }
+    fn name(&self) -> &'static str {
+        "Dropdown"
+    }
 }
 
 fn overlay_rect(anchor: Rect, screen: Rect, desired_h: u16) -> Rect {
@@ -194,12 +251,27 @@ fn overlay_rect(anchor: Rect, screen: Rect, desired_h: u16) -> Rect {
     let room_above = anchor.y.saturating_sub(screen.y);
 
     if desired_h <= room_below {
-        Rect { x: anchor.x, y: anchor.y + 1, width, height: desired_h }
+        Rect {
+            x: anchor.x,
+            y: anchor.y + 1,
+            width,
+            height: desired_h,
+        }
     } else if room_above > room_below {
         let h = desired_h.min(room_above);
-        Rect { x: anchor.x, y: anchor.y.saturating_sub(h), width, height: h }
+        Rect {
+            x: anchor.x,
+            y: anchor.y.saturating_sub(h),
+            width,
+            height: h,
+        }
     } else {
-        Rect { x: anchor.x, y: anchor.y + 1, width, height: room_below }
+        Rect {
+            x: anchor.x,
+            y: anchor.y + 1,
+            width,
+            height: room_below,
+        }
     }
 }
 
@@ -211,12 +283,16 @@ mod tests {
 
     fn key(c: KeyCode) -> Event {
         Event::Key(KeyEvent {
-            code: c, modifiers: KeyModifiers::NONE,
-            kind: KeyEventKind::Press, state: KeyEventState::NONE,
+            code: c,
+            modifiers: KeyModifiers::NONE,
+            kind: KeyEventKind::Press,
+            state: KeyEventState::NONE,
         })
     }
 
-    fn opts() -> Vec<String> { vec!["Apple".into(), "Banana".into(), "Cherry".into()] }
+    fn opts() -> Vec<String> {
+        vec!["Apple".into(), "Banana".into(), "Cherry".into()]
+    }
 
     #[test]
     fn enter_opens() {
@@ -261,8 +337,12 @@ mod tests {
         assert_eq!(d.selected_value(), Some("Kiwi"));
     }
 
-    fn screen(w: u16, h: u16) -> Rect { Rect::new(0, 0, w, h) }
-    fn anchor_at(y: u16, w: u16) -> Rect { Rect::new(0, y, w.max(30), 1) }
+    fn screen(w: u16, h: u16) -> Rect {
+        Rect::new(0, 0, w, h)
+    }
+    fn anchor_at(y: u16, w: u16) -> Rect {
+        Rect::new(0, y, w.max(30), 1)
+    }
 
     #[test]
     fn overlay_rect_opens_below_when_fits() {

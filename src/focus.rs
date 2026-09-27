@@ -51,7 +51,9 @@ impl FocusManager {
     /// remembers the previously focused id for restoration.
     pub fn begin_frame(&mut self) {
         let scope = self.scope_mut();
-        let current_id = scope.current.and_then(|i| scope.focusables.get(i).map(|e| e.id));
+        let current_id = scope
+            .current
+            .and_then(|i| scope.focusables.get(i).map(|e| e.id));
         scope.focusables.clear();
         scope.current = None;
         scope.pending_restore = current_id;
@@ -87,7 +89,9 @@ impl FocusManager {
 
     pub fn focus_next(&mut self) {
         let s = self.scope_mut();
-        if s.focusables.is_empty() { return; }
+        if s.focusables.is_empty() {
+            return;
+        }
         s.current = Some(match s.current {
             Some(i) => (i + 1) % s.focusables.len(),
             None => 0,
@@ -96,7 +100,9 @@ impl FocusManager {
 
     pub fn focus_prev(&mut self) {
         let s = self.scope_mut();
-        if s.focusables.is_empty() { return; }
+        if s.focusables.is_empty() {
+            return;
+        }
         s.current = Some(match s.current {
             Some(0) => s.focusables.len() - 1,
             Some(i) => i - 1,
@@ -132,7 +138,12 @@ mod tests {
     use super::*;
 
     fn rect(x: u16, y: u16, w: u16, h: u16) -> Rect {
-        Rect { x, y, width: w, height: h }
+        Rect {
+            x,
+            y,
+            width: w,
+            height: h,
+        }
     }
 
     #[test]

@@ -82,15 +82,15 @@ Why `RefCell<Buffer>`: `Component::render` takes `&self`. The scratch buffer mut
 
 ### `ScrollContent` implementations shipped in v0.2
 
-| Type | `measure` | `render_buf` |
-|---|---|---|
-| `Text` (new) | wrapped-line count at width W | `ratatui::widgets::Paragraph` |
-| `VStack` | Σ of children's `measure(width)` + spacing (each child is given the full width) | iterate children vertically |
-| `HStack` | max of children's `measure(child_width)` (each child gets an equal slice of the width, matching v0.1 HStack layout) | iterate children horizontally |
-| `Grid` | Σ of row heights, where each row height = max of `cell.measure(column_width)` across cells in that row (each column gets an equal slice of the width) | iterate cells |
-| `Toggle` | 1 | underlying ratatui render into buffer |
-| `Radio` | 1 | underlying ratatui render into buffer |
-| `StatusBar` | 1 | underlying ratatui render into buffer |
+| Type         | `measure`                                                                                                                                             | `render_buf`                          |
+| ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
+| `Text` (new) | wrapped-line count at width W                                                                                                                         | `ratatui::widgets::Paragraph`         |
+| `VStack`     | Σ of children's `measure(width)` + spacing (each child is given the full width)                                                                       | iterate children vertically           |
+| `HStack`     | max of children's `measure(child_width)` (each child gets an equal slice of the width, matching v0.1 HStack layout)                                   | iterate children horizontally         |
+| `Grid`       | Σ of row heights, where each row height = max of `cell.measure(column_width)` across cells in that row (each column gets an equal slice of the width) | iterate cells                         |
+| `Toggle`     | 1                                                                                                                                                     | underlying ratatui render into buffer |
+| `Radio`      | 1                                                                                                                                                     | underlying ratatui render into buffer |
+| `StatusBar`  | 1                                                                                                                                                     | underlying ratatui render into buffer |
 
 Explicitly NOT implementing `ScrollContent` in v0.2:
 
@@ -168,6 +168,7 @@ fn cursor_hint(&self) -> Option<Position> { None }  // in content-local coords
 Following SPEC.md convention (behavior-tested, not snapshot-tested):
 
 **`scroll_view::tests`:**
+
 - `clamps_scroll_to_content_height` — set scroll past content; render; assert `self.scroll` is clamped.
 - `measures_child_and_sizes_buffer` — child of known measure; verify viewport copies correct rows for a given scroll.
 - `page_down_advances_by_ten` — keep existing.
@@ -176,10 +177,12 @@ Following SPEC.md convention (behavior-tested, not snapshot-tested):
 - `grandchild_without_scroll_content_renders_blank` — VStack containing a TextField inside a ScrollView; the TextField's row range in the buffer is blank, not crashed.
 
 **`text::tests` (new module):**
+
 - `measure_wraps_at_width` — `"hello world"` at width 5 → measures 3 lines.
 - `render_buf_writes_content` — render and read back specific cells.
 
 **`vstack::tests` addition:**
+
 - `measure_sums_children` — three `Text` widgets of known height → VStack measure returns the sum (+ spacing).
 
 Compile-fail test for the sub-trait bound is deferred (see "Scope").

@@ -7,6 +7,7 @@
 tuile is a reusable TUI component framework built on [ratatui](https://github.com/ratatui-org/ratatui). It provides a Component trait, a focus manager, a cascading theme system, and a library of widgets and layout containers.
 
 It was written because the existing TUI framework options in Rust have specific pain points:
+
 - **ratatui alone** — widgets are stateless render helpers; you own all state and event routing. Great flexibility, zero abstractions, but you reinvent text inputs, dropdowns, focus, etc. for every app.
 - **tui-realm** — provides a component model but with runtime-typed enum state, a three-hop event pipeline (`Event → Cmd → CmdResult → Msg`), and two traits per component (`MockComponent` + `Component`) with significant boilerplate.
 
@@ -151,6 +152,7 @@ impl<'a> RenderContext<'a> {
 ```
 
 Notes:
+
 - The explicit lifetime on `children_mut` is required because Rust's lifetime elision otherwise infers `'static` for bare trait objects returned from a method taking `&mut self`, and that breaks any container that wants to hand out borrows of its children. This is a Rust-language constraint, not a design choice.
 - `traps_focus` is what Modal overrides to prevent Tab from escaping it.
 - `is_focusable` is false for layout containers (VStack, Grid, Modal), true for widgets by default.
@@ -241,63 +243,78 @@ v0.2 ships `ScrollContent` for: `Text`, `VStack`, `HStack`, `Grid`, `Toggle`, `R
 ## Widget catalog
 
 All field widgets (TextField, IntField, FloatField, DollarField, DateField) follow an **Enter-to-edit** model:
+
 - Not editing: showing the value. Enter begins editing (cursor appears).
 - Editing: keystrokes modify value. Enter commits (Submit action). Esc reverts (Cancel action).
 - Dirty tracking: shows `•` marker when current value differs from last committed.
 - Validation: `.validate() → ValidationResult` (Valid or Invalid(reason)).
 
 ### TextField
+
 ```rust
 TextField::new("Name", "initial value")
     .required()
     .char_filter(|c| c.is_ascii_digit() || c == '.')
 ```
+
 - Cursor within value (Left/Right/Home/End/Delete/Backspace)
 - `char_filter` restricts which characters are accepted when typed
 - `required()` fails validation on empty value
 
 ### IntField
+
 ```rust
 IntField::new("Count", 5).range(0, 100).required()
 ```
+
 - i64-only; Up/Down increments/decrements in editing mode
 - Range clamping on increment; `range(min, max)` where `min >= 0` disables the `-` key
 
 ### FloatField
+
 ```rust
 FloatField::new("Rate", 3.5).range(0.0, 100.0).decimals(2)
 ```
+
 - f64 with configurable decimal precision (for `set_value` display)
 
 ### DollarField
+
 ```rust
 DollarField::new("Amount", 150_500).required()
 ```
+
 - Stores milliunits internally (×1000 per dollar — matches YNAB's API representation)
 - Parses `150`, `150.00`, `$150`, `$150.00`, `-50.00`, `1,234.56`
 - Rejects more than 2 decimal places
 
 ### Toggle
+
 ```rust
 Toggle::new("Enabled", true)
 ```
+
 - **Enter or Space flips. `t` does NOT.** (Explicit unit test enforces this.)
 - Shows `◉ ON` (green) / `○ OFF` (gray) for clear visual distinction
 
 ### Radio
+
 ```rust
 Radio::new("Weekend", vec!["None".into(), "Previous".into(), "Next".into()], 0)
 ```
+
 - Horizontal layout, `◉` for selected, `○` for unselected
 - Left/Right cycles; Enter commits; Esc reverts
 - Intended for ≤5 options (for larger lists, use Dropdown)
 
 ### Dropdown
+
 ```rust
 Dropdown::new("Category", options, Some(0))
     .required()
     .allow_create()
 ```
+
 - Closed state: shows selected value + `▼`
 - Open state: filter line + selectable list of matches, rendered as an overlay below the anchor rect
 - Type to filter (case-insensitive substring match)
@@ -305,52 +322,64 @@ Dropdown::new("Category", options, Some(0))
 - Overlay opens below the anchor by default; flips above automatically when below doesn't have enough room.
 
 ### DateField
+
 ```rust
 DateField::new("Anchor Date", Some(chrono::NaiveDate::from_ymd_opt(2026, 1, 1).unwrap()))
 ```
+
 - Three sub-fields: YYYY / MM / DD (each an IntField internally)
 - Left/Right moves between sub-fields; Up/Down increments the focused sub-field
 - Enter commits the composed date (must parse to a valid NaiveDate)
 
 ### Calendar
+
 ```rust
 Calendar::new(chrono::Local::now().naive_local().date())
 ```
+
 - Month grid view with Mo-Su column headers
 - Arrow keys navigate days; PgUp/PgDn changes month
 - Enter submits; Esc reverts to committed value
 
 ### StatusBar
+
 ```rust
 let mut bar = StatusBar::new();
 bar.set("Saved");  // 45-tick countdown starts
 ```
+
 - One-line message that auto-dismisses on `Event::Tick`
 - Not focusable
 
 ### Text
+
 ```rust
 Text::new("Some read-only content that may wrap.")
     .alignment(ratatui::layout::Alignment::Left)
 ```
+
 - Read-only multi-line text. Wraps `ratatui::widgets::Paragraph`.
 - Implements `ScrollContent` — primary widget for scrollable text blocks.
 - `.no_wrap()` disables word-wrap; `.alignment(...)` sets alignment.
 - Rich styled runs are deferred to a future `RichText` widget.
 
 ### List
+
 ```rust
 let mut list = List::new(vec!["item 1".into(), "item 2".into()]);
 ```
+
 - Scrollable single-select list
 - Up/Down, PageUp/PageDown, Home/End, Enter (Submit), mouse wheel
 - **Bottom-clamp invariant:** scroll never extends past content (no empty space below the last item)
 
 ### Table
+
 ```rust
 Table::new(vec!["Name".into(), "Amount".into()],
            vec![vec!["Rent".into(), "$1200.00".into()]])
 ```
+
 - Scrollable table with header row
 - Same navigation keys as List
 - `widths(Vec<Constraint>)` for column sizing
@@ -360,46 +389,56 @@ Table::new(vec!["Name".into(), "Amount".into()],
 Containers return `is_focusable() → false` by default. They own children and route events to them.
 
 ### VStack / HStack
+
 ```rust
 VStack::new().spacing(1)
     .add(Box::new(field1))
     .add(Box::new(field2))
 ```
+
 - Proportional layout: children share available height (VStack) or width (HStack) equally, plus optional spacing between them
 - `handle_event` forwards to the first child that doesn't `Ignore`
 
 ### Grid
+
 ```rust
 Grid::new(3, 2)
     .set(0, 0, Box::new(field1))
     .set(1, 1, Box::new(field2))
 ```
+
 - Fixed rows × columns; cells empty unless `set`
 - Children share row height and column width equally
 
 ### Overlay
+
 ```rust
 let mut overlay = Overlay::new(Box::new(menu));
 overlay.show(Rect { x: 10, y: 5, width: 30, height: 8 });
 ```
+
 - Absolute-positioned layer rendered on top of other content
 - `traps_focus()` when visible
 - Used internally by (future) ContextMenu; Dropdown does its own overlay rendering for v0.1
 
 ### Modal
+
 ```rust
 let mut modal = Modal::new("Edit Schedule", Box::new(form))
     .size_pct(70, 70);
 modal.show();
 ```
+
 - Centered overlay with titled, bordered frame
 - `traps_focus()` when open
 - Child is rendered inside the block's inner rect
 
 ### ScrollView
+
 ```rust
 ScrollView::new(Box::new(long_content))
 ```
+
 - Wraps a child that implements `ScrollContent`; clips oversized content to the viewport via an internal scratch buffer
 - Handles PgUp / PgDn / Home / End / mouse wheel
 - Direct children **must** implement `ScrollContent` (compile-time check). Editable widgets (TextField, IntField, DateField, Dropdown when open, Calendar) intentionally do not — wrapping one in `ScrollView` is a compile error.
@@ -407,21 +446,25 @@ ScrollView::new(Box::new(long_content))
 - Horizontal scrolling is not supported in v0.2 (content reflows to viewport width via `measure`).
 
 ### Form
+
 ```rust
 Form::new()
     .add(Box::new(name_field))
     .add(Box::new(amount_field))
 ```
+
 - Vertical field list with Up/Down navigation between fields
 - Enter begins editing the focused child (routes Enter to it); subsequent keys go to the editing child until it emits `Submit` or `Cancel`
 - Eliminates shortcut conflicts: while a field is editing, typed letters go into the field, not to Form's shortcuts
 
 ### Tabs
+
 ```rust
 Tabs::new()
     .add("Budget", Box::new(budget_panel))
     .add("Schedules", Box::new(schedule_panel))
 ```
+
 - Tab bar on top + single active panel below
 - Tab / Shift+Tab cycles active tab
 - Events not consumed by the tab bar are forwarded to the active panel
@@ -465,6 +508,7 @@ Then route events/renders through `modal` — it traps focus, handles centering,
 ## Testing approach
 
 Each widget/container module includes `#[cfg(test)]` unit tests that exercise:
+
 - Key handling (Up/Down/Left/Right/Enter/Esc)
 - Dirty tracking (changes → dirty; commit clears; revert clears)
 - Validation edge cases (empty, out-of-range, bad format)
@@ -486,7 +530,7 @@ ratatui's `Frame::render_widget` takes the widget by value, and the typical patt
 
 ### Why themes clone on override
 
-`RenderContext::with_theme` clones the theme and mutates the clone. Themes are small (<30 color fields) and typically overridden at modal/scope boundaries (not per-widget), so cloning is cheap. The alternative — a linked chain of overrides — adds complexity without meaningful performance upside.
+`RenderContext::with_theme` clones the theme and mutates the clone. Themes are small (\<30 color fields) and typically overridden at modal/scope boundaries (not per-widget), so cloning is cheap. The alternative — a linked chain of overrides — adds complexity without meaningful performance upside.
 
 ### Why StatusBar has a tick field instead of timestamps
 
@@ -521,6 +565,7 @@ v0.3+ can add `fn cursor_hint(&self) -> Option<Position> { None }` to `ScrollCon
 ## How the app at ../ynab-budget-manager uses tuile
 
 `ynab-budget-manager-subproject-1` is a real consumer of tuile. Specifically:
+
 - The Budget tab's category group headers use `Theme::dark()` semantic tokens (`primary`/`on_primary`, `surface_raised`/`on_surface_strong`) for Section 508 contrast.
 - The Schedule modal (`src/tui/schedule_modal.rs` in that repo) is a three-mode state machine (ReadOnly / Write / field-editing) built on `TextField`, `DollarField`, `DateField`, `Dropdown`, `Radio`, `Toggle`. It demonstrates the "while typing, shortcuts don't fire" pattern: the modal checks `is_editing_field()` (any widget with `editing == true` or `open == true`) and routes all keys to the focused widget when true.
 
@@ -540,9 +585,11 @@ cargo build          # clean, no warnings
 ```
 
 Theme presets are asserted at AA contrast:
+
 ```
 cargo test theme::tests
 ```
+
 - `dark_theme_passes_aa` — checks `on_surface/surface`, `on_primary/primary`, `on_error/error`, `on_surface_strong/surface` all ≥ 4.5:1
 - `light_theme_passes_aa` — same, against the light preset
 

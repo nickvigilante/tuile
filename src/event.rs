@@ -1,8 +1,8 @@
 //! Unified input event type.
 
 use crossterm::event::{
-    KeyEvent as CtKeyEvent, MouseEvent as CtMouseEvent, MouseEventKind as CtMouseKind,
-    MouseButton as CtMouseButton,
+    KeyEvent as CtKeyEvent, MouseButton as CtMouseButton, MouseEvent as CtMouseEvent,
+    MouseEventKind as CtMouseKind,
 };
 
 /// All input events a component might receive.
@@ -100,9 +100,8 @@ mod tests {
 
     #[test]
     fn paste_sanitizes_newlines() {
-        let ev = Event::from_crossterm(crossterm::event::Event::Paste(
-            "hello\nworld\r".to_string(),
-        ));
+        let ev =
+            Event::from_crossterm(crossterm::event::Event::Paste("hello\nworld\r".to_string()));
         assert_eq!(ev, Some(Event::Paste("helloworld".to_string())));
     }
 
